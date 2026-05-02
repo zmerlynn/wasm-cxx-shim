@@ -12,11 +12,13 @@ platforms (WASI imports, JS shims). This project provides the smaller,
 narrower thing you need to compile a self-contained C++ kernel and link
 it against `wasm-bindgen`-style wasm without dragging in either ecosystem.
 
-**Status: v0.1, pre-CI.** All three components implemented and a smoke
-test linking `std::vector` + `std::unordered_map` + a virtual-dtor class
-through libc++'s real header chain produces a 13.5 KB wasm with zero
-imports and the expected return value. A `find_package` round-trip via
-an external consumer build is also green. CI workflow is the next step.
+**Status: v0.2.0.** All three components implemented; CI green on
+{Ubuntu, macOS} × {LLVM 20, 21}; the headline `wasm32-unknown-unknown`
+property (zero unexpected imports) is asserted on every wasm we ship.
+A real-world consumer integration — manifold v3.4.1's library + its
+own GoogleTest-based boolean test suite (47/47 passing) — runs end
+to end on top of the shim under Node. See the release notes for the
+full picture.
 
 See [`docs/context.md`](docs/context.md) for the design background and
 [`docs/plan.md`](docs/plan.md) for the phased implementation roadmap +
@@ -98,7 +100,7 @@ license + attribution is preserved alongside the code.
 
 ## Status
 
-v0.1, pre-CI. End-to-end:
+v0.2.0. End-to-end:
 
 - libc/libm/libcxx components implemented; compile cleanly to wasm32
   static archives.
@@ -107,4 +109,9 @@ v0.1, pre-CI. End-to-end:
   the expected value with zero wasm imports.
 - `find_package(wasm-cxx-shim COMPONENTS …)` works against an installed
   prefix (validated by `test/consumer/`).
-- CI workflow is next (Phase 6 of `docs/plan.md`).
+- **CI** green on Ubuntu + macOS × LLVM 20 + 21, both lightweight build
+  and heavyweight manifold integration matrices.
+- **manifold v3.4.1** links + its full C-API runs against the shim;
+  its `boolean_test.cpp` GoogleTest suite passes 47/47 under a generic
+  `wasm-test-harness` mechanism (see `tools/wasm-test-harness/`,
+  `test/manifold-link/`, `test/manifold-tests/`).
