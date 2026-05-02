@@ -46,6 +46,7 @@ FetchContent_Declare(manifold
     GIT_SHALLOW    TRUE
     PATCH_COMMAND  git apply --ignore-whitespace -p0
                    ${CMAKE_CURRENT_SOURCE_DIR}/patches/0002-manifold-ifdef-iostream.patch
+                   ${CMAKE_CURRENT_SOURCE_DIR}/patches/0003-manifold-test-main-ifdef-filesystem.patch
     UPDATE_DISCONNECTED TRUE
 )
 

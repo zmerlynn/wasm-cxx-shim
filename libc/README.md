@@ -9,8 +9,8 @@ that need an allocator and a memory-copy primitive.
 Allocator (dlmalloc):
 - `malloc`, `free`, `calloc`, `realloc`, `aligned_alloc`
 
-Memory ops (musl):
-- `memcpy`, `memmove`, `memset`, `memcmp`
+Memory + string ops (musl):
+- `memcpy`, `memmove`, `memset`, `memcmp`, `strlen`
 
 Internal-only:
 - `sbrk` — synthetic, wraps `__builtin_wasm_memory_grow`. Despite the
@@ -23,7 +23,7 @@ compile against this shim:
 
 | Header | Origin | Notes |
 |---|---|---|
-| `<string.h>` | hand-written | declares mem* family only |
+| `<string.h>` | hand-written | declares mem* family + `strlen` |
 | `<endian.h>` | hand-written | wasm-cxx-shim's endian shim |
 | `<features.h>` | musl-derived | source-feature flags + `__restrict`, `__inline`, `_Noreturn` |
 | `<bits/alltypes.h>` | hand-written | musl-style typedef provider keyed off `__NEED_*` macros (size_t, FILE, mbstate_t, …) |
@@ -59,7 +59,7 @@ By demand only. Not in scope for v0.1:
 | `src/dlmalloc/malloc.c` | [WebAssembly/wasi-libc `dlmalloc/src/malloc.c`](https://github.com/WebAssembly/wasi-libc/blob/main/dlmalloc/src/malloc.c) (Doug Lea malloc v2.8.6 verbatim) | CC0 / public domain | unmodified |
 | `src/dlmalloc/dlmalloc.c` | derived from [wasi-libc `dlmalloc/src/dlmalloc.c`](https://github.com/WebAssembly/wasi-libc/blob/main/dlmalloc/src/dlmalloc.c) | MIT (also Apache-2.0) | trimmed: drops musl alias machinery, `<malloc.h>`/`<errno.h>` deps, `posix_memalign`/`malloc_usable_size`. Hardcodes wasm page size; inlines `ENOMEM`/`EINVAL` |
 | `src/dlmalloc/sbrk.c` | derived from [wasi-libc `libc-bottom-half/sources/sbrk.c`](https://github.com/WebAssembly/wasi-libc/blob/main/libc-bottom-half/sources/sbrk.c) | MIT | trimmed: `<errno.h>`/`<unistd.h>`/`<stdlib.h>` deps, `errno` set on OOM |
-| `src/musl/memcpy.c`,<br>`src/musl/memmove.c`,<br>`src/musl/memset.c`,<br>`src/musl/memcmp.c` | [wasi-libc/libc-top-half/musl/src/string/](https://github.com/WebAssembly/wasi-libc/tree/main/libc-top-half/musl/src/string) (musl) | MIT | unmodified (musl uses a project-wide LICENSE; no per-file headers to preserve) |
+| `src/musl/memcpy.c`,<br>`src/musl/memmove.c`,<br>`src/musl/memset.c`,<br>`src/musl/memcmp.c`,<br>`src/musl/strlen.c` | [wasi-libc/libc-top-half/musl/src/string/](https://github.com/WebAssembly/wasi-libc/tree/main/libc-top-half/musl/src/string) (musl) | MIT | unmodified (musl uses a project-wide LICENSE; no per-file headers to preserve) |
 
 The wasi-libc-derived files inherit wasm-specific tweaks already applied
 by the WASI SDK team — most importantly the bulk-memory threshold gating
