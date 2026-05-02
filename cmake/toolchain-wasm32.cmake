@@ -313,6 +313,16 @@ set(CMAKE_RANLIB       "${_wasm_cxx_shim_ranlib}"  CACHE FILEPATH "wasm32 ranlib
 set(CMAKE_C_COMPILER_TARGET   wasm32-unknown-unknown)
 set(CMAKE_CXX_COMPILER_TARGET wasm32-unknown-unknown)
 
+# NOTE: CMAKE_<LANG>_IMPLICIT_INCLUDE_DIRECTORIES is also reset to ""
+# in the top-level CMakeLists AFTER project(). Setting it here in the
+# toolchain file alone is insufficient because CMake's compiler-detect
+# step (run during project()) generates a CMakeCXXCompiler.cmake that
+# stomps on the value with the auto-detected clang resource dir. The
+# top-level CMakeLists override is the load-bearing one; we keep the
+# toolchain-file precedent for documentation.
+set(CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES   "")
+set(CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES "")
+
 # wasm-ld is the linker driver; clang invokes it via -fuse-ld=wasm-ld
 # but it must be reachable. Communicate the path to consumers via a
 # cache variable; downstream test/smoke uses it directly.

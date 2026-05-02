@@ -290,19 +290,40 @@ Every PR against `main` runs the same.
 
 **Done when**: CI is green on all four LLVM versions on both OSes.
 
-### Phase 7 — Downstream consumer (manifold-csg) (out of scope for v0.1, but plan it)
+### Phase 7 — Downstream consumer integration (in flight, post-v0.1)
 
-Only after v0.1 ships:
+Originally framed as "manifold-csg integration." During implementation
+this naturally split into sub-phases. Sub-phase shorthand:
 
-- Draft an upstream-manifold PR adding `MANIFOLD_WASM_FREESTANDING=ON`
-  CMake option that uses `FetchContent` to pull this repo and links
-  the three components.
-- Carry-patch in `manifold-csg` to drive that option on the
-  `wasm32-unknown-unknown` target.
-- Document the consumer story in this repo's README.
+- **7-B1**: link upstream manifold (the C++ library + C bindings)
+  against the shim. Validates the runtime symbol set is sufficient
+  to BUILD a real-world consumer.
+- **7-B2**: run upstream manifold's TESTS on the shim. Validates
+  end-to-end correctness via the consumer's own test suite. Requires
+  a generic test-harness mechanism.
+- **7-A**: integrate manifold-csg (the Rust crate) on top of #1+#2.
+  The Rust-binding-via-bindgen-via-cmake-FetchContent layer.
 
-This phase is explicitly out of v0.1 scope. v0.1 ships when phases 0-6
-are done and tagged.
+Status:
+
+- **Phase 7-B1 — DONE (PR #3)**. manifold v3.4.1's
+  library + manifoldc compile + link against the shim. Probe runs
+  manifold_cube → translate → boolean(ADD); 0 imports; returns 36.
+  Two new ctest entries (manifold_link_imports_check, manifold_link_run).
+  Three carry-patches (Clipper2 iostream strip, manifold OBJ-I/O ifdef,
+  test/manifold-link/include/mutex stub) plus libcxx-extras.cpp for
+  shared_ptr machinery + std::nothrow that the main libcxx component
+  doesn't ship.
+- **Phase 7-B2 — IN PR #4**. Generic test-harness under
+  `tools/wasm-test-harness/` plus a GoogleTest translation adapter.
+  First integration: `test/manifold-tests/` runs manifold's
+  `boolean_test.cpp` — 47/47 tests pass.
+- **Phase 7-A — not started**. Begins after 7-B1+B2 land.
+
+CI integration (running 7-B1/7-B2 jobs in CI) is a follow-up PR after
+the merges; the local ctest is green but the heavyweight build
+(manifold+Clipper2 fetch+compile, ~5 min/cell) is only opted-in
+locally for now.
 
 ## File-tree shape after v0.1
 
