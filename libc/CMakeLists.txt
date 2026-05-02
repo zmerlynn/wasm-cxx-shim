@@ -11,11 +11,12 @@ set(WASM_CXX_SHIM_LIBC_SOURCES
     # dlmalloc engine + our wrapper + sbrk shim
     src/dlmalloc/dlmalloc.c
     src/dlmalloc/sbrk.c
-    # musl mem* (memcpy/memmove/memset/memcmp)
+    # musl mem*/str* (memcpy/memmove/memset/memcmp/strlen)
     src/musl/memcpy.c
     src/musl/memmove.c
     src/musl/memset.c
     src/musl/memcmp.c
+    src/musl/strlen.c
 )
 
 # malloc.c is #include'd from dlmalloc.c, not compiled directly. List it

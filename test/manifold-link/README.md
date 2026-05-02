@@ -55,8 +55,19 @@ Current patches:
   Generated against Clipper2 SHA `46f639177...` (the SHA manifold v3.4.1
   pins). Upstream PR: TODO (cleaner form would be a `#ifdef
   CLIPPER2_NO_IOSTREAM` guard rather than commented-out blocks).
-
-(More patches will be added as the build progresses — see "Status" below.)
+- `0002-manifold-ifdef-iostream.patch` — wraps manifold's iostream-using
+  OBJ I/O paths (`FromChars` template, `Read/WriteOBJ*` in `impl.cpp`,
+  the C-API `manifold_*_obj` bindings in `manifoldc.cpp`) in
+  `#ifndef MANIFOLD_NO_IOSTREAM`. Generated against manifold v3.4.1.
+- `0003-manifold-test-main-ifdef-filesystem.patch` — wraps the
+  `<filesystem>`/`<fstream>` includes plus `print_usage()`/`main()`
+  plus the file-I/O fixture helpers (`Read/WriteTestOBJ*`) in
+  `test/test_main.cpp` under `#ifndef MANIFOLD_NO_FILESYSTEM`. The
+  helpers gain trivial stub-alternative bodies so call sites in
+  individual test files (e.g. `if (options.exportModels) WriteTestOBJ(...)`
+  in `boolean_test.cpp`) link cleanly. Pulled in by Phase 7-B2 so we
+  can compile manifold's own `test_main.cpp` directly under the
+  harness instead of vendoring its helpers.
 
 ## Stub headers
 
@@ -119,10 +130,13 @@ upstream-friendly form documented in its preamble:
 
 - **Clipper2** patch: file as `#ifndef CLIPPER2_NO_IOSTREAM` guards
   upstream against AngusJohnson/Clipper2.
-- **Manifold** patch: file as `#ifndef MANIFOLD_NO_IOSTREAM` guards
-  upstream against elalish/manifold (could be exposed as a CMake
-  option `MANIFOLD_WASM_FREESTANDING=ON` that sets all the relevant
-  flags together).
+- **Manifold OBJ-I/O** patch (0002): file as `#ifndef MANIFOLD_NO_IOSTREAM`
+  guards upstream against elalish/manifold.
+- **Manifold test-main filesystem** patch (0003): file as
+  `#ifndef MANIFOLD_NO_FILESYSTEM` guards upstream against
+  elalish/manifold. The two manifold patches could be combined upstream
+  under a single `MANIFOLD_WASM_FREESTANDING=ON` CMake option that
+  defines both macros (and the parallel/exception/RTTI flags) together.
 
 Once both upstreams take the patches, the carry-patches drop and we
 just bump the pinned versions.

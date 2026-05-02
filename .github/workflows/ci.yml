@@ -79,3 +79,66 @@ jobs:
             build/wasm32/test/smoke/smoke.wasm
           retention-days: 90
           if-no-files-found: error
+
+  # Heavyweight job: link manifold v3.4.1 against the shim and run its
+  # GoogleTest-based boolean tests via the wasm-test-harness. Multi-minute
+  # FetchContent + build per cell, so it lives in its own job — the main
+  # `build` job stays fast and its status is independent of this one.
+  manifold:
+    name: manifold / ${{ matrix.os }} / LLVM ${{ matrix.llvm }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        llvm: [20, 21]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install LLVM (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s ${{ matrix.llvm }}
+          sudo apt-get install -y libc++-${{ matrix.llvm }}-dev libc++abi-${{ matrix.llvm }}-dev
+          echo "WASM_CXX_SHIM_LLVM_BIN_DIR=/usr/lib/llvm-${{ matrix.llvm }}/bin" >> "$GITHUB_ENV"
+
+      - name: Install LLVM (macOS)
+        if: runner.os == 'macOS'
+        run: brew install llvm@${{ matrix.llvm }} lld@${{ matrix.llvm }}
+
+      - name: Install wabt + ninja
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update -qq
+            sudo apt-get install -y wabt ninja-build
+          else
+            brew install wabt ninja
+          fi
+
+      - name: Configure (manifold ON)
+        run: cmake --preset wasm32 -DWASM_CXX_SHIM_BUILD_MANIFOLD_LINK=ON
+
+      - name: Build
+        run: cmake --build --preset wasm32
+
+      - name: Test
+        run: ctest --preset wasm32 --output-on-failure
+
+      # Upload the heavy wasms on success AND failure — a failed
+      # ctest is exactly when these are most useful for debugging.
+      - name: Upload manifold wasm artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manifold-wasm-${{ matrix.os }}-llvm${{ matrix.llvm }}
+          path: |
+            build/wasm32/test/manifold-link/manifold-link-probe.wasm
+            build/wasm32/test/manifold-tests/manifold-tests.wasm
+          retention-days: 30
+          if-no-files-found: warn

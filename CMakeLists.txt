@@ -70,17 +70,28 @@ if(WASM_CXX_SHIM_BUILD_LIBCXX)
     add_subdirectory(libcxx)
 endif()
 
-if(WASM_CXX_SHIM_BUILD_TESTS)
+# enable_testing() before any subdirectory that calls add_test() — the
+# harness self-tests under tools/wasm-test-harness/test/ register ctest
+# entries and would be silently dropped if testing weren't enabled
+# beforehand.
+if(WASM_CXX_SHIM_BUILD_TESTS OR WASM_CXX_SHIM_BUILD_MANIFOLD_LINK)
     enable_testing()
+endif()
+
+# Test harness lives under tools/ — built when tests are on, since
+# manifold-tests (and any future consumer test integration) link against it.
+if(WASM_CXX_SHIM_BUILD_TESTS OR WASM_CXX_SHIM_BUILD_MANIFOLD_LINK)
+    add_subdirectory(tools/wasm-test-harness)
+endif()
+
+if(WASM_CXX_SHIM_BUILD_TESTS)
     add_subdirectory(test/smoke)
     add_subdirectory(test/consumer)
 endif()
 
 if(WASM_CXX_SHIM_BUILD_MANIFOLD_LINK)
-    if(NOT WASM_CXX_SHIM_BUILD_TESTS)
-        enable_testing()
-    endif()
     add_subdirectory(test/manifold-link)
+    add_subdirectory(test/manifold-tests)
 endif()
 
 # ---- find_package(wasm-cxx-shim) support ----

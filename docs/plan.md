@@ -310,14 +310,20 @@ Status:
   library + manifoldc compile + link against the shim. Probe runs
   manifold_cube → translate → boolean(ADD); 0 imports; returns 36.
   Two new ctest entries (manifold_link_imports_check, manifold_link_run).
-  Three carry-patches (Clipper2 iostream strip, manifold OBJ-I/O ifdef,
-  test/manifold-link/include/mutex stub) plus libcxx-extras.cpp for
-  shared_ptr machinery + std::nothrow that the main libcxx component
-  doesn't ship.
-- **Phase 7-B2 — IN PR #4**. Generic test-harness under
+  Two carry-patches at this point (Clipper2 iostream strip, manifold
+  OBJ-I/O ifdef) plus test/manifold-link/include/mutex stub and
+  libcxx-extras.cpp for shared_ptr machinery + std::nothrow that the
+  main libcxx component doesn't ship.
+- **Phase 7-B2 — DONE (PR #4)**. Generic test-harness under
   `tools/wasm-test-harness/` plus a GoogleTest translation adapter.
-  First integration: `test/manifold-tests/` runs manifold's
-  `boolean_test.cpp` — 47/47 tests pass.
+  First consumer integration: `test/manifold-tests/` runs manifold's
+  `boolean_test.cpp` (and manifold's own `test/test_main.cpp` —
+  helpers + Options global, with main()+filesystem fixture I/O
+  ifdef'd out via patches/0003-manifold-test-main-ifdef-filesystem).
+  47/47 tests pass. The harness mechanism generalizes: future
+  consumers (using GoogleTest, Catch2, doctest, or a custom framework)
+  get a small adapter header under `tools/wasm-test-harness/adapters/`.
+  Realizes the "run a portion of consumer CI in ours" framing.
 - **Phase 7-A — not started**. Begins after 7-B1+B2 land.
 
 CI integration (running 7-B1/7-B2 jobs in CI) is a follow-up PR after
