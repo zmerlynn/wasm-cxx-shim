@@ -5,8 +5,14 @@ the shim. Validates end-to-end correctness of the full stack
 (libc + libm + libcxx + libcxx-extras + manifold + Clipper2) via a
 real consumer's tests, not just a probe.
 
-Currently runs `test/boolean_test.cpp` from manifold v3.4.1 — **47/47
-tests pass**.
+Currently runs three test files from manifold v3.4.1 — **71/71
+tests pass**:
+
+| File | Tests | Surface |
+|---|---|---|
+| `test/boolean_test.cpp`        | 47 | 3D Boolean ops (union, difference, intersect, Minkowski, ...) |
+| `test/sdf_test.cpp`            |  9 | Signed distance fields → marching cubes; libm-heavy |
+| `test/cross_section_test.cpp`  | 15 | 2D ops via Clipper2 (offset, hull, fill rules, decompose) |
 
 ## What this exercises
 
@@ -15,9 +21,11 @@ tests pass**.
   filesystem-based fixture I/O. Provides `Options options;` and the
   helpers (`ExpectMeshes`, `RelatedGL`, `CheckGL`, `CheckStrictly`,
   `CubeSTL`, `CubeUV`, ...) that consumer test files call.
-- `test/boolean_test.cpp` compiled against the gtest-shim adapter at
-  `tools/wasm-test-harness/adapters/gtest/` — `TEST(...)`, `EXPECT_*`,
-  and `ASSERT_*` macros expand to `WCS_*` calls in the harness.
+- The test files (`boolean_test.cpp`, `sdf_test.cpp`,
+  `cross_section_test.cpp`) compiled against the gtest-shim adapter
+  at `tools/wasm-test-harness/adapters/gtest/` — `TEST(...)`,
+  `EXPECT_*`, and `ASSERT_*` macros expand to `WCS_*` calls in the
+  harness.
 - `wasm-test-harness` library (C only): registry of registered tests,
   log buffer, runner that walks the registry and reports counts via
   the `wcs_run_tests` export.
@@ -61,6 +69,8 @@ Append the manifold test source path to `_manifold_test_files` in
 set(_manifold_test_files
     ${_manifold_src}/test/test_main.cpp
     ${_manifold_src}/test/boolean_test.cpp
+    ${_manifold_src}/test/sdf_test.cpp
+    ${_manifold_src}/test/cross_section_test.cpp
     ${_manifold_src}/test/manifold_test.cpp   # <- add new ones here
 )
 ```
@@ -78,7 +88,10 @@ Things that may need extending when you do:
 - **The carry-patches** under `test/manifold-link/patches/` — if a new
   test file uses `<filesystem>` / `<fstream>` / threading directly,
   either extend `0003-manifold-test-main-ifdef-filesystem.patch` to
-  cover those bits or write a new patch.
+  cover those bits or write a new patch. Note that test files
+  depending on the `samples` library (TorusKnot, MengerSponge, etc.)
+  will need that library wired in too — manifold gates `samples` on
+  `MANIFOLD_TEST=ON` which we have OFF, so it's not currently built.
 
 ## Carry-patch dependency
 
@@ -112,7 +125,7 @@ node tools/wasm-test-harness/run.mjs \
     build/wasm32/test/manifold-tests/manifold-tests.wasm
 ```
 
-Expected output ends with: `wasm-test-harness: 47 passed, 0 failed, 47 total`.
+Expected output ends with: `wasm-test-harness: 71 passed, 0 failed, 71 total`.
 
 ## Why this exists
 

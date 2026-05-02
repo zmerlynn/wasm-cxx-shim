@@ -96,19 +96,19 @@ The runner produces a stream of log lines:
 
 ```
 wasm-test-harness: starting...
-[   1/  47] Boolean.Tetra ... ok
-[   2/  47] Boolean.MeshGLRoundTrip ... ok
-[   3/  47] Boolean.HypotheticalRegression ... FAILED (3 assertion failures)
+[   1/  71] Boolean.Tetra ... ok
+[   2/  71] Boolean.MeshGLRoundTrip ... ok
+[   3/  71] Boolean.HypotheticalRegression ... FAILED (3 assertion failures)
     FAIL boolean_test.cpp:123: m.NumTri() == 12
     FAIL boolean_test.cpp:124: m.IsEmpty() == false
     FAIL boolean_test.cpp:131: la::length(...) < 0.001
-[   4/  47] ...
-wasm-test-harness: 44 passed, 3 failed, 47 total
+[   4/  71] ...
+wasm-test-harness: 68 passed, 3 failed, 71 total
 ```
 
-(Real example: this PR's `manifold_tests_run` reports
-`47 passed, 0 failed, 47 total` — the failure example above is
-illustrative.)
+(Real example: `manifold_tests_run` against the current `main` reports
+`71 passed, 0 failed, 71 total` across boolean + SDF + cross_section.
+The failure case above is illustrative.)
 
 `run.mjs` exits with status 0 if the failure count is zero, 1 otherwise.
 
