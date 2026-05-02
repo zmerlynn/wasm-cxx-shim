@@ -1,5 +1,7 @@
 # wasm-cxx-shim
 
+[![CI](https://github.com/zmerlynn/wasm-cxx-shim/actions/workflows/ci.yml/badge.svg)](https://github.com/zmerlynn/wasm-cxx-shim/actions/workflows/ci.yml)
+
 A minimal, CMake-installable C and C++ runtime shim for the
 `wasm32-unknown-unknown` Rust/Clang target.
 
