@@ -13,6 +13,20 @@ project(wasm-cxx-shim
     LANGUAGES C CXX
 )
 
+# Force-clear the auto-detected implicit include directories AFTER
+# project() — the toolchain file's pre-project() setting gets stomped
+# by compiler detection (which writes CMakeCXXCompiler.cmake with the
+# auto-detected `${clang_resource_dir}/include`). CMake then injects
+# that path via `-isystem` BEFORE every user `-isystem`, breaking
+# libc++'s `<cstddef>` → `<stddef.h>` resolution chain
+# (libc++'s own stddef.h wrapper gets shadowed by clang's freestanding
+# one). Surfaced when integrating manifold via FetchContent
+# (manifold uses standard add_library which goes through CMake's
+# compile-rule machinery; the smoke test bypassed it via
+# add_custom_command).
+set(CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES   "")
+set(CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES "")
+
 # Always emit compile_commands.json so LSPs (clangd, ccls) get the right
 # target triple and headers. Without this, an LSP using Apple clang at the
 # default target won't recognize __builtin_wasm_memory_grow etc.
@@ -35,6 +49,10 @@ option(WASM_CXX_SHIM_BUILD_LIBC   "Build the libc component"   ON)
 option(WASM_CXX_SHIM_BUILD_LIBM   "Build the libm component"   ON)
 option(WASM_CXX_SHIM_BUILD_LIBCXX "Build the libcxx component" ON)
 option(WASM_CXX_SHIM_BUILD_TESTS  "Build the smoke tests"      OFF)
+# Heavy / opt-in: clones manifold + Clipper2 + dependencies (multi-MB,
+# minutes to build). See test/manifold-link/README.md.
+option(WASM_CXX_SHIM_BUILD_MANIFOLD_LINK
+       "Build the upstream-manifold link test (Phase 7 precursor)" OFF)
 
 # Install-path conventions (CMAKE_INSTALL_LIBDIR, CMAKE_INSTALL_INCLUDEDIR,
 # CMAKE_INSTALL_DATADIR). Included BEFORE add_subdirectory so the
@@ -56,6 +74,13 @@ if(WASM_CXX_SHIM_BUILD_TESTS)
     enable_testing()
     add_subdirectory(test/smoke)
     add_subdirectory(test/consumer)
+endif()
+
+if(WASM_CXX_SHIM_BUILD_MANIFOLD_LINK)
+    if(NOT WASM_CXX_SHIM_BUILD_TESTS)
+        enable_testing()
+    endif()
+    add_subdirectory(test/manifold-link)
 endif()
 
 # ---- find_package(wasm-cxx-shim) support ----
