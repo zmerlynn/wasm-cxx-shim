@@ -1,0 +1,39 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "wasm32",
+      "displayName": "wasm32-unknown-unknown",
+      "description": "Cross-compile to bare wasm32 using a wasm-capable LLVM",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/wasm32",
+      "toolchainFile": "${sourceDir}/cmake/toolchain-wasm32.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel",
+        "WASM_CXX_SHIM_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "wasm32-debug",
+      "inherits": "wasm32",
+      "displayName": "wasm32-unknown-unknown (Debug)",
+      "binaryDir": "${sourceDir}/build/wasm32-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "wasm32",       "configurePreset": "wasm32" },
+    { "name": "wasm32-debug", "configurePreset": "wasm32-debug" }
+  ],
+  "testPresets": [
+    {
+      "name": "wasm32",
+      "configurePreset": "wasm32",
+      "output": { "outputOnFailure": true },
+      "execution": { "stopOnFailure": false }
+    }
+  ]
+}

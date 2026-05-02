@@ -1,0 +1,9 @@
+build/
+build-*/
+.cache/
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/
+compile_commands.json
