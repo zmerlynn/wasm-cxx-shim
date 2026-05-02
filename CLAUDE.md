@@ -441,3 +441,27 @@ discards the intermediate commit objects, and lets you compose the
 final message from scratch rather than editing pick/squash markers.
 Force-push (`git push --force-with-lease`) only after confirming the
 branch hasn't been pulled by anyone else.
+
+## All changes to `main` go through PRs
+
+After the v0.1 initial push, **never push directly to `main`.** Every
+change — including doc tweaks, CI fixes, anything — lands via a PR.
+Workflow:
+
+1. Branch off `main`: `git checkout -b <descriptive-branch-name>`.
+2. Make whatever changes the work requires. Commit as you go;
+   intra-branch commits are exploratory and will be squashed.
+3. Before pushing the branch, squash the intra-branch commits into
+   one (per the "one session, one commit" rule above).
+4. `git push -u origin <branch>`, then `gh pr create --fill` (or
+   compose title/body explicitly).
+5. Wait for CI green; address review; merge via `gh pr merge --squash
+   --delete-branch` (or via GitHub web UI with the same options).
+6. `git checkout main && git pull` to sync local main.
+
+**Why**: history on `main` stays linear, every change has a CI run
+attached, and reviews (even self-reviews) become a natural checkpoint.
+
+**Exception**: the very first commit (the v0.1 initial push) goes
+direct, because there's no `main` to PR against yet. After that, PRs
+all the way down.
