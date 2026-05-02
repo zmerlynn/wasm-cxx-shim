@@ -36,6 +36,11 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s ${{ matrix.llvm }}
+          # llvm.sh installs clang/lld/llvm but not libc++ — the smoke test
+          # needs libc++ headers, so pull them explicitly. apt.llvm.org's
+          # libc++-N-dev installs to /usr/lib/llvm-N/include/c++/v1/, which
+          # is where test/smoke/CMakeLists looks (sibling of the clang bin).
+          sudo apt-get install -y libc++-${{ matrix.llvm }}-dev libc++abi-${{ matrix.llvm }}-dev
           echo "WASM_CXX_SHIM_LLVM_BIN_DIR=/usr/lib/llvm-${{ matrix.llvm }}/bin" >> "$GITHUB_ENV"
 
       - name: Install LLVM (macOS)
