@@ -455,12 +455,27 @@ Workflow:
    one (per the "one session, one commit" rule above).
 4. `git push -u origin <branch>`, then `gh pr create --fill` (or
    compose title/body explicitly).
-5. Wait for CI green; address review; merge via `gh pr merge --squash
-   --delete-branch` (or via GitHub web UI with the same options).
-6. `git checkout main && git pull` to sync local main.
+5. Wait for CI green. Then **stop and hand back to the user.**
+6. After the user confirms the merge happened, `git checkout main &&
+   git pull && git remote prune origin` to sync local main.
 
 **Why**: history on `main` stays linear, every change has a CI run
-attached, and reviews (even self-reviews) become a natural checkpoint.
+attached, and the human stays in the loop on what lands.
+
+**The merge guardrail (load-bearing)**: Claude opens the PR and
+reports CI status, but **does NOT run `gh pr merge`** — even after
+self-review, even on its own work, even when CI is green. The user
+either merges via the GitHub UI / their own `gh pr merge`, or
+explicitly says "merge it." Without an explicit instruction, treat a
+green CI as the END of the loop, not a green light to merge.
+
+This is enforced by branch protection on `main` (required status
+checks + required linear history + no force pushes), but the
+human-in-the-loop gate for the merge action itself is a guardrail at
+the agent level rather than the GitHub level — partly so the policy
+is visible in this file rather than buried in repo settings, and
+partly so even an admin user (who can bypass branch protection)
+doesn't accidentally let an agent merge.
 
 **Exception**: the very first commit (the v0.1 initial push) goes
 direct, because there's no `main` to PR against yet. After that, PRs
