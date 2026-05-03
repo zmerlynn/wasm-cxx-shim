@@ -15,6 +15,13 @@
 //      function declarations). Reach them via extern declarations
 //      so the compile step also succeeds and the link is the thing
 //      that fails.
+//
+// What keeps these calls alive against -Os dead-stripping: the
+// expect-link-failure.sh script passes `--export=unimplemented_calls`
+// to wasm-ld. Without that, --no-entry would dead-strip the entire
+// function; with it, the function body's calls to fopen/etc. are
+// preserved (the compiler can't prove fopen's side effects empty
+// without seeing its implementation, so it can't elide the call).
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,22 +33,15 @@ extern int  open(const char*, int, ...);
 extern int  read(int, void*, unsigned long);
 extern int  close(int);
 
-// Keep-alive: prevents the optimizer from concluding these calls are
-// dead and removing them. Without it, -Os may strip the calls and
-// the link would succeed because nothing references the symbols.
-static void keep_alive(volatile void* p) { (void)p; }
-
 void unimplemented_calls(void) {
     // Category 1: stdio.h declarations w/ no implementations.
     FILE* f = fopen("/tmp/x", "r");
-    keep_alive(f);
     fclose(f);
     remove("/tmp/x");
     rename("/tmp/x", "/tmp/y");
 
     // Category 1: stdlib.h declarations w/ no implementations.
-    int rc = system("ls");
-    keep_alive(&rc);
+    (void)system("ls");
 
     // Category 2: POSIX surface not declared by our headers.
     clock_gettime(0, (void*)0);

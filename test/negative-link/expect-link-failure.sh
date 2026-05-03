@@ -12,6 +12,18 @@
 # Exit codes:
 #   0  link failed with the expected "undefined symbol" pattern
 #   1  link succeeded (regression!) OR link failed with an unexpected error
+#
+# Known limitation — partial regressions:
+#
+# uses_unimplemented.c references 9 out-of-scope functions in one TU.
+# If a future maintainer adds an implementation for ONE of them (say,
+# fopen), the link still fails with 8 undefined symbols, this script
+# still exits 0, and we'd silently lose coverage of fopen. The "all-
+# or-nothing" check catches the most likely regression mode (someone
+# accidentally adding implementations) but not the partial case. A
+# stricter form would compile each function in its own TU + ctest
+# entry; deferred until we have evidence of partial regressions
+# happening in practice.
 
 set -uo pipefail
 

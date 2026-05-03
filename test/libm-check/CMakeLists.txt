@@ -56,6 +56,12 @@ add_custom_command(
 
 add_custom_target(libm-check ALL DEPENDS ${_libm_check_wasm})
 
+# Re-find wasm-objdump locally rather than relying on the smoke test's
+# CMakeLists having populated the cache first. find_program with a
+# cache variable is idempotent across calls; this keeps libm-check
+# robust against future subdir reordering that would otherwise
+# silently drop the imports-check entry.
+find_program(WASM_OBJDUMP_EXECUTABLE wasm-objdump)
 if(WASM_OBJDUMP_EXECUTABLE)
     add_test(NAME libm_check_imports_check
         COMMAND bash ${CMAKE_SOURCE_DIR}/test/smoke/check-imports.sh
