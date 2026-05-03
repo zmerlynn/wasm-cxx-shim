@@ -86,6 +86,17 @@ symbols**. Verify, for each changed component:
 - **Smoke test export is `run`** (or whatever the CMake target
   declares); no accidental extra exports unless the smoke test asks
   for them via `--export`. Run `wasm-objdump -j Export` to verify.
+- **Every new wasm artifact has both `*_imports_check` and
+  `*_size_budget` ctest entries.** Pattern is established across
+  smoke, libm-check, harness self-test, manifold-link, and
+  manifold-tests (since PR #7). A PR adding a new wasm without
+  *both* assertions is a finding — the imports-check protects the
+  headline "no unexpected imports" property; the size budget
+  provides early warning of accidental code-bloat regressions
+  (e.g., a new libcxx-extras addition pulling in a stray
+  dependency). Reuse `test/smoke/check-imports.sh` and
+  `test/smoke/check-size.sh`; budgets are hand-tuned to current
+  size + ~15-50% margin.
 
 ### 2. C++ ABI correctness (libcxx component)
 
@@ -322,6 +333,28 @@ For any change touching `libc/src/dlmalloc/malloc.c`,
   file invoked via `add_test(COMMAND bash path/to/script.sh ...)`
   instead. We hit this once (Phase 4) and recovered. Future test
   wrappers must not do inline `sh -c`.
+- **`ASSERT_*`-in-helper semantics differ from real GoogleTest.**
+  Our gtest-shim adapter implements `ASSERT_*` as `WCS_REQUIRE_*`,
+  which `return`s from the *helper function*, not from the calling
+  TEST. Real GoogleTest sets a `HasFatalFailure()` flag the test
+  body would re-check; we don't. When reviewing a new manifold (or
+  other consumer) test file, check whether it calls helpers that
+  use `ASSERT_*` (in manifold's case: `Identical`, `CheckGL`,
+  `CheckStrictly`, `RelatedGL`). Empirically benign so far on
+  passing tests; flag as a **note** for awareness — failure-mode
+  debugging may surface as multi-failure cascades or unexpected
+  state rather than clean aborts. The adapter's preamble
+  (`tools/wasm-test-harness/adapters/gtest/gtest.h`) documents the
+  trade-off.
+- **Test wasms built with `--no-entry`** must `--export=` any
+  function whose presence is part of the test's correctness — wasm-ld
+  dead-strips functions not reachable from any export. Particularly
+  critical for negative-test fixtures (the negative-link gate's
+  `unimplemented_calls` would silently vanish without `--export=`,
+  passing the link-failure check vacuously). Combined with
+  `--error-unresolved-symbols` for strict mode where applicable
+  (default wasm-ld behavior is silently lenient about undefined
+  symbols).
 
 ### 8. Documentation accuracy
 
