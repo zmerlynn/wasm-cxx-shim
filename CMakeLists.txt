@@ -8,7 +8,7 @@
 
 cmake_minimum_required(VERSION 3.25)
 project(wasm-cxx-shim
-    VERSION 0.2.0
+    VERSION 0.3.0
     DESCRIPTION "Minimal C/C++ runtime shim for wasm32-unknown-unknown"
     LANGUAGES C CXX
 )
