@@ -387,6 +387,39 @@ For any change touching `libc/src/dlmalloc/malloc.c`,
 - **Open questions in `docs/context.md` get resolved or moved.** Once
   the implementation pass closes an open question, update context.md
   ("Allocator choice: dlmalloc, see plan.md" rather than a TBD).
+- **Doc-staleness sweep across markdown.** When reviewing release-prep
+  PRs, OR any PR that flips a phase/feature/component status, OR any
+  PR claiming "X is done now," do a grep across all `*.md`
+  (excluding CHANGELOG.md, which legitimately enumerates old
+  versions) for these stale-marker patterns and verify each hit is
+  either intentional historical narrative or needs an update:
+  ```sh
+  grep -rn -E "v0\.1[^.]|v0\.2|v0\.3|pre-CI|next step|TBD|TODO|coming|not started|in flight|NEXT" \
+      --include='*.md' --exclude=CHANGELOG.md --exclude-dir=build .
+  ```
+  Common drift patterns:
+  - **Duplicated Status sections.** README often has both an intro
+    paragraph mentioning status AND a `## Status` H2 section near
+    the bottom. When both exist, they diverge across releases.
+    Either keep one source of truth (delete the duplicate) or audit
+    both on every release. A README with two Status blocks
+    referencing different versions is a **warning**.
+  - **Hardcoded version numbers in evergreen prose.** "Status: v0.2.0."
+    in the README rots on every release. Prefer either no version
+    (link to releases/CHANGELOG for per-version detail) or a single
+    "current release" pointer that auto-updates. Hardcoded version
+    in the README intro is a **note** — fine while the release
+    cadence is slow, worth removing if it starts drifting often.
+  - **Phase status markers** ("NEXT", "in flight", "not started")
+    for phases now DONE — `docs/plan.md` is the usual culprit.
+    Stale phase status against landed work is a **warning**.
+  - **"TBD" / "TODO" placeholders** that should resolve once the
+    referenced thing exists. A `(TBD)` next to a link to a doc that
+    is actually fleshed out is a **note**.
+  - **Test counts in narrative prose** (e.g., "47/47 tests pass") in
+    READMEs that drift when test coverage extends. Either keep
+    abstract ("a slice of its tests passes") or commit to updating
+    on every test addition. Drift here is a **note**.
 
 ### 9. Style for hand-written code
 

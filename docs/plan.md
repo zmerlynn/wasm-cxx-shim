@@ -272,25 +272,19 @@ gets working targets.
 **Done when**: CI's "consumer" job builds a `find_package`-driven
 project against a freshly-installed shim and links cleanly.
 
-### Phase 6 — CI (NEXT)
+### Phase 6 — CI (DONE — PR #1)
 
-**Goal**: Every push to `main` runs the full build + smoke test.
-Every PR against `main` runs the same.
+CI workflow shipped in `.github/workflows/ci.yml`. Matrix landed as
+`{ubuntu-latest, macos-latest}` × `{LLVM 20, 21}` (vs the originally-
+planned 18-21 — newer LLVM only). Steps: `cmake --preset wasm32`,
+`cmake --build --preset wasm32`, `ctest --preset wasm32
+--output-on-failure`. A separate `manifold` job covers the
+heavyweight integration matrix (PR #4). Status badge in the README.
 
-- [ ] `.github/workflows/ci.yml`:
-  - Matrix: `{ubuntu-latest, macos-latest}` × `{LLVM 18, 19, 20, 21}`.
-  - Install LLVM via apt (`llvm.org/apt`) on Ubuntu, `brew install
-    llvm@N` on macOS.
-  - `wabt` via apt/brew for `wasm-objdump`.
-  - Steps: `cmake --preset wasm32 -DLLVM_VERSION=$LLVM_VERSION`,
-    `cmake --build --preset wasm32`, `ctest --preset wasm32 --output-on-failure`.
-  - Separate "consumer" job: install the shim, then build
-    `test/consumer/` against the install.
-- [ ] Status badge in top-level README.
+The PR-only-to-`main` policy + agent-merge guardrail were added in
+PR #2 and are documented in CLAUDE.md.
 
-**Done when**: CI is green on all four LLVM versions on both OSes.
-
-### Phase 7 — Downstream consumer integration (in flight, post-v0.1)
+### Phase 7 — Downstream consumer integration (post-v0.1)
 
 Originally framed as "manifold-csg integration." During implementation
 this naturally split into sub-phases. Sub-phase shorthand:

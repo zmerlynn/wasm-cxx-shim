@@ -1,9 +1,9 @@
 # Context: why this exists, what's known, where to start
 
 This document captures the design discussion that led to scaffolding this
-repo. It's not a plan — see `plan.md` (TBD) for the implementation
-roadmap. This file is the prior art and the reasoning, so whoever picks
-up implementation has the same context the author did.
+repo. It's not a plan — see [`plan.md`](plan.md) for the implementation
+roadmap and decision log. This file is the prior art and the reasoning,
+so whoever picks up implementation has the same context the author did.
 
 ## The gap, in one paragraph
 

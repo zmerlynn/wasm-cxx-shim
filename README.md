@@ -12,17 +12,17 @@ platforms (WASI imports, JS shims). This project provides the smaller,
 narrower thing you need to compile a self-contained C++ kernel and link
 it against `wasm-bindgen`-style wasm without dragging in either ecosystem.
 
-**Status: v0.3.0.** All three components implemented; CI green on
+**Status:** All three components implemented; CI green on
 {Ubuntu, macOS} × {LLVM 20, 21}; the headline `wasm32-unknown-unknown`
 property (zero unexpected imports) is asserted on every wasm we ship.
-A real-world consumer integration — manifold v3.4.1's library + a
-slice of its own GoogleTest-based test suite (71/71 across
-`boolean_test`, `sdf_test`, `cross_section_test`) — runs end to end
-on top of the shim under Node. v0.3.0 ships the
-`wasm_cxx_shim_add_manifold()` CMake helper to streamline the
-integration for downstream consumers; `manifold-csg` (Rust bindings)
-already builds + runs on `wasm32-unknown-unknown` against the shim.
-See the release notes for the full picture.
+End-to-end validation: a slice of manifold's GoogleTest test suite
+(boolean / SDF / cross-section) runs on the shim under Node. The
+shim ships a `wasm_cxx_shim_add_manifold()` CMake helper to
+streamline the integration; `manifold-csg` (Rust bindings) builds +
+runs on `wasm32-unknown-unknown` against the shim. See
+[`CHANGELOG.md`](CHANGELOG.md) and
+[releases](https://github.com/zmerlynn/wasm-cxx-shim/releases) for
+per-version detail.
 
 See [`docs/context.md`](docs/context.md) for the design background and
 [`docs/plan.md`](docs/plan.md) for the phased implementation roadmap +
@@ -130,22 +130,3 @@ underneath libcxx underneath user code — but each layer here is a
 MIT (see [LICENSE](LICENSE)). Where source is derived from third-party
 projects (musl, dlmalloc, libc++/libc++abi reference shims), original
 license + attribution is preserved alongside the code.
-
-## Status
-
-v0.2.0. End-to-end:
-
-- libc/libm/libcxx components implemented; compile cleanly to wasm32
-  static archives.
-- Smoke test (`std::vector` + `std::unordered_map` + virtual dtor + libm)
-  links against the three shim archives and runs in Node, returning
-  the expected value with zero wasm imports.
-- `find_package(wasm-cxx-shim COMPONENTS …)` works against an installed
-  prefix (validated by `test/consumer/`).
-- **CI** green on Ubuntu + macOS × LLVM 20 + 21, both lightweight build
-  and heavyweight manifold integration matrices.
-- **manifold v3.4.1** links + its full C-API runs against the shim;
-  a slice of its GoogleTest suite (`boolean_test` + `sdf_test` +
-  `cross_section_test` = 71/71) passes under a generic
-  `wasm-test-harness` mechanism (see `tools/wasm-test-harness/`,
-  `test/manifold-link/`, `test/manifold-tests/`).
