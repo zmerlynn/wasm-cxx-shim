@@ -341,6 +341,43 @@ them.
   shell variable references, breaking case-statement patterns and
   everything else with embedded quotes. Use a real shell script file
   invoked via `add_test(COMMAND bash path/to/script.sh ...)` instead.
+- **`enable_testing()` must precede any `add_subdirectory()` that
+  calls `add_test()`.** Late-binding silently drops the test entries
+  — the `add_test` call in the subdir is a no-op when testing wasn't
+  enabled in (or before) its enclosing scope. The build still
+  succeeds and the wasm still builds; ctest just lists fewer entries
+  than the CMake source implies. We hit this when adding the harness
+  self-test in PR #4 and fixed it by hoisting `enable_testing()`
+  above all test-subdir adds in the top-level CMakeLists.
+
+### wasm-ld and test wasms
+
+- **`--no-entry` dead-strips functions not reachable from any export.**
+  When building a test wasm with `--no-entry` (we do — there's no
+  conventional `_start` for our wasms), wasm-ld removes any function
+  that isn't reachable through `--export=`-listed symbols. Tests that
+  need a function preserved for inspection (e.g., the negative-link
+  gate's `unimplemented_calls`, which exists *to* surface its own
+  undefined references) MUST `--export=` it explicitly. Without the
+  export, the function vanishes, the undefined symbols it references
+  vanish with it, and you get a "successful" link of an empty wasm —
+  which silently passes whatever check you wrote.
+- **wasm-ld is silently lenient about undefined symbols by default.**
+  Default behavior treats undefined references as imports or just
+  ignores them (depending on the flag set). For test wasms that need
+  to FAIL on unresolved symbols (negative-link gate, link-correctness
+  asserts), pass `--error-unresolved-symbols`. For test wasms that
+  need to deliberately allow undefined (rare), `--allow-undefined` is
+  the explicit opt-in. The default is the surprise.
+- **`WCS_TEST` static-init registration requires C++ compilation.**
+  The macro expands to a static initializer that calls
+  `wcs_register_test()`. Pure-C file-scope initializers must be
+  constant expressions per the C standard; a function call isn't.
+  Test sources using the harness must be `.cpp` even if the body is
+  C-flavored (no STL, no exceptions). Compiling as `.c` produces a
+  cryptic "initializer element is not a compile-time constant" error
+  at every WCS_TEST. The harness header documents this; the rule
+  mirrors here so it doesn't get lost.
 
 ### Shell scripting
 
