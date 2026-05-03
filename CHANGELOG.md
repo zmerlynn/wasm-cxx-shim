@@ -13,10 +13,11 @@ pin of manifold + Clipper2 with the carry-patches that make them link
 on `wasm32-unknown-unknown`. Each tagged shim release verifies the
 combination in CI:
 
-| Shim version | manifold       | Clipper2                                     | Patches shipped       |
-|--------------|----------------|----------------------------------------------|-----------------------|
-| v0.3.0       | `v3.4.1`       | `46f639177fe418f9689e8ddb74f08a870c71f5b4`   | 0001 + 0002 + 0003    |
-| v0.2.0       | `v3.4.1`       | `46f639177fe418f9689e8ddb74f08a870c71f5b4`   | 0001 + 0002 + 0003 (carried in `test/manifold-link/patches/`; helper not yet present) |
+| Shim version          | manifold                                      | Clipper2                                     | Patches shipped       |
+|-----------------------|-----------------------------------------------|----------------------------------------------|-----------------------|
+| v0.4.0-alpha.1        | `5f95a3ac` (master + vendored elalish/manifold#1690) | inherits manifold's pin (manifold owns the FetchContent_Declare) | 1 (verbatim diff of #1690) |
+| v0.3.0                | `v3.4.1`                                      | `46f639177fe418f9689e8ddb74f08a870c71f5b4`   | 0001 + 0002 + 0003    |
+| v0.2.0                | `v3.4.1`                                      | `46f639177fe418f9689e8ddb74f08a870c71f5b4`   | 0001 + 0002 + 0003 (carried in `test/manifold-link/patches/`; helper not yet present) |
 
 Consumers calling `wasm_cxx_shim_add_manifold()` (introduced in v0.3.0)
 with no arguments get the row matching their installed shim version.
@@ -32,7 +33,63 @@ version where the macro guard appears natively.
 
 ## Unreleased
 
-(no changes since v0.3.0)
+(no changes since v0.4.0-alpha.1)
+
+## v0.4.0-alpha.1 — manifold pin bump + #1690 carry-patch (2026-05-03)
+
+Pre-release. Pins manifold to a current upstream master commit and
+folds the three shim-side iostream patches into a single vendored
+diff of [elalish/manifold#1690][pr1690] (the upstream PR that adds
+`MANIFOLD_NO_IOSTREAM` natively). Once #1690 lands and the shim's
+manifold pin moves past it, the carry-patch drops entirely and a
+v0.4.0 (non-alpha) release follows.
+
+[pr1690]: https://github.com/elalish/manifold/pull/1690
+
+### Added
+
+- `cmake/manifold-patches/0001-manifold-no-iostream.patch` — verbatim
+  diff of #1690 against the pinned upstream manifold commit. Replaces
+  the three previously-shipped patches.
+- Six additional manifold test files now run on the shim:
+  `boolean_complex_test`, `manifoldc_test`, `smooth_test` (plus the
+  existing `boolean_test`, `cross_section_test`, `sdf_test`). Total
+  test count: **121** (up from 71).
+
+### Changed
+
+- `wasm_cxx_shim_add_manifold()`: refactored for the post-#1690
+  world. Drops the Clipper2 pre-declaration, sets
+  `MANIFOLD_NO_IOSTREAM=ON` as a CMake cache var, and lets manifold's
+  carry-patched option chain propagate `MANIFOLD_NO_FILESYSTEM` and
+  `CLIPPER2_NO_IOSTREAM` as PUBLIC compile defs.
+- API: removed `CLIPPER2_GIT_TAG` and `EXTRA_CLIPPER2_PATCHES`
+  parameters (manifold owns the Clipper2 declaration; shim no longer
+  has a say). `MANIFOLD_GIT_TAG`, `EXTRA_MANIFOLD_PATCHES`, and
+  `SKIP_BUILTIN_PATCHES` continue to work.
+- Default `MANIFOLD_GIT_TAG` bumped from `v3.4.1` to a master commit
+  (`5f95a3ac`) so the carry-patch applies cleanly.
+- `manifold_tests_size_budget` raised from 1.10 MB to 1.40 MB to
+  accommodate the expanded test set.
+
+### Removed
+
+- The three shim-side iostream patches
+  (`0001-clipper2-strip-iostream`, `0002-manifold-ifdef-iostream`,
+  `0003-manifold-test-main-ifdef-filesystem`). Replaced by the
+  single vendored #1690 diff.
+
+### Notes for downstream consumers
+
+- This is an **alpha pre-release** pinned to a specific manifold
+  commit. The carry-patch may be re-rolled if #1690 evolves in
+  review (would land as alpha.2, alpha.3, etc.). The non-alpha
+  v0.4.0 ships once #1690 merges.
+- Consumers calling `wasm_cxx_shim_add_manifold()` without
+  overrides will be on the bumped pin automatically. Override
+  with `MANIFOLD_GIT_TAG <ref>` if you need to stay on the v0.3.0
+  combination — pair with `EXTRA_MANIFOLD_PATCHES` to supply your
+  own iostream patches in that case.
 
 ## v0.3.0 — CMake integration helper (2026-05-02)
 

@@ -32,44 +32,32 @@ repo would defeat the "minimal shim" framing.
 
 ## Pinned upstream versions
 
-| Project | Tag | Why |
-|---|---|---|
-| manifold  | `v3.4.1`         | Latest stable as of March 2026. |
-| Clipper2  | `Clipper2_2.0.1` | What manifold v3.4.1 pulls. |
+The shim's `wasm_cxx_shim_add_manifold()` helper bundles a known-good
+manifold pin (see `cmake/WasmCxxShimManifold.cmake`'s default
+`MANIFOLD_GIT_TAG`). Clipper2's pin is owned by manifold's own
+`cmake/manifoldDeps.cmake`; the shim no longer pre-declares it.
 
-Bumping these is a deliberate act tracked in git. When upstream
-manifold takes the patches we carry below, drop the patch and bump
-the pin.
+Each shim release verifies a specific manifold pin in CI; see
+`CHANGELOG.md`'s "Tested upstream combinations" table for the
+mapping.
 
-## Carry-patches
+## Carry-patch
 
-Live under [`cmake/manifold-patches/`](../../cmake/manifold-patches/)
+Lives under [`cmake/manifold-patches/`](../../cmake/manifold-patches/)
 (canonical location — alongside the `wasm_cxx_shim_add_manifold()`
-helper that applies them via FetchContent's `PATCH_COMMAND`). Each is
-a `git diff --no-prefix`-style file with an upstream-PR-target note in
-its header.
+helper that applies it via FetchContent's `PATCH_COMMAND`):
 
-Current patches:
+- **`0001-manifold-no-iostream.patch`** — verbatim vendored diff of
+  [elalish/manifold#1690](https://github.com/elalish/manifold/pull/1690)
+  against the pinned manifold commit. Adds a `MANIFOLD_NO_IOSTREAM`
+  build option that strips iostream- and filesystem-using bits from
+  manifold's public API and tests, and propagates the matching
+  `CLIPPER2_NO_IOSTREAM` macro to the bundled Clipper2 (via a tracking
+  patch for [AngusJohnson/Clipper2#1094](https://github.com/AngusJohnson/Clipper2/pull/1094)
+  shipped inside #1690 itself).
 
-- `0001-clipper2-strip-iostream.patch` — strip `<iostream>` references
-  from Clipper2's headers. Originally from
-  [pca006132's recipe](https://github.com/elalish/manifold/discussions/1046#discussioncomment-11302257).
-  Generated against Clipper2 SHA `46f639177...` (the SHA manifold v3.4.1
-  pins). Upstream PR: TODO (cleaner form would be a `#ifdef
-  CLIPPER2_NO_IOSTREAM` guard rather than commented-out blocks).
-- `0002-manifold-ifdef-iostream.patch` — wraps manifold's iostream-using
-  OBJ I/O paths (`FromChars` template, `Read/WriteOBJ*` in `impl.cpp`,
-  the C-API `manifold_*_obj` bindings in `manifoldc.cpp`) in
-  `#ifndef MANIFOLD_NO_IOSTREAM`. Generated against manifold v3.4.1.
-- `0003-manifold-test-main-ifdef-filesystem.patch` — wraps the
-  `<filesystem>`/`<fstream>` includes plus `print_usage()`/`main()`
-  plus the file-I/O fixture helpers (`Read/WriteTestOBJ*`) in
-  `test/test_main.cpp` under `#ifndef MANIFOLD_NO_FILESYSTEM`. The
-  helpers gain trivial stub-alternative bodies so call sites in
-  individual test files (e.g. `if (options.exportModels) WriteTestOBJ(...)`
-  in `boolean_test.cpp`) link cleanly. Pulled in by Phase 7-B2 so we
-  can compile manifold's own `test_main.cpp` directly under the
-  harness instead of vendoring its helpers.
+Once #1690 lands and the shim's manifold pin moves past the merge,
+this carry-patch drops entirely.
 
 ## Stub headers
 
@@ -83,10 +71,10 @@ all mutex operations are trivially correct as no-ops.
 
 ## Status — green
 
-manifold v3.4.1's library + C API bindings compile against the shim,
-link with **zero unexpected wasm imports**, and the probe runs under
-Node returning a sane triangle count for a boolean-union operation.
-Two ctest entries cover this:
+manifold's library + C API bindings compile against the shim, link
+with **zero unexpected wasm imports**, and the probe runs under Node
+returning a sane triangle count for a boolean-union operation. Two
+ctest entries cover this:
 
 - `manifold_link_imports_check` — wasm-objdump assertion that the
   Import section is absent.
@@ -96,25 +84,22 @@ Two ctest entries cover this:
 
 What it took to get green:
 
-1. **`MANIFOLD_PAR=OFF`** (not `=-1`; v3.4.1 changed STRING to BOOL).
+1. **`MANIFOLD_PAR=OFF`** — manifold's parallel backend is a hard
+   dependency on TBB/OpenMP we don't ship.
 2. **CMake auto-injection fix** in top-level CMakeLists
    (`CMAKE_<LANG>_IMPLICIT_INCLUDE_DIRECTORIES ""` post-`project()`).
    Stops CMake from prepending clang's resource dir as `-isystem`
    before user `-isystem` paths, which was breaking libc++'s
    `<cstddef>` → `<stddef.h>` resolution chain. Broadly useful — not
    manifold-specific.
-3. **`cmake/manifold-patches/0001-clipper2-strip-iostream.patch`** —
-   strips iostream `operator<<` / `OutlinePolyPath*` from Clipper2
-   v2.0.1 headers.
-4. **`cmake/manifold-patches/0002-manifold-ifdef-iostream.patch`** —
-   wraps manifold's OBJ I/O in `#ifndef MANIFOLD_NO_IOSTREAM`. Three
-   blocks: `FromChars` template, all of `WriteOBJ*`/`ReadOBJ*` in
-   `impl.cpp`, and the C-API `manifold_*_obj` bindings in
-   `manifoldc.cpp`.
-5. **Stub `include/mutex`** — no-op `std::mutex`/`recursive_mutex`/
+3. **The vendored #1690 carry-patch** described above — gives manifold
+   a `MANIFOLD_NO_IOSTREAM` build option that propagates through to
+   `MANIFOLD_NO_FILESYSTEM` and `CLIPPER2_NO_IOSTREAM`, stripping
+   stream- and filesystem-using bits from the public API + tests.
+4. **Stub `include/mutex`** — no-op `std::mutex`/`recursive_mutex`/
    `lock_guard`/`scoped_lock`/`unique_lock` because libc++ gates
    these behind `_LIBCPP_HAS_THREADS`.
-6. **`libcxx-extras.cpp`** — provides the libc++ source-file symbols
+5. **`libcxx-extras.cpp`** — provides the libc++ source-file symbols
    that the main libcxx component intentionally doesn't ship:
    `std::nothrow`, `std::__1::__shared_count::~__shared_count`,
    `std::__1::__shared_weak_count::~__shared_weak_count` /
@@ -122,28 +107,19 @@ What it took to get green:
    functions, and `std::align`. Scoped to this test, NOT part of the
    main libcxx component (which stays insulated from `<memory>` /
    `<new>` includes for libc++ version-drift safety).
-7. **Clipper2 utilities/tests/examples disabled** via
+6. **Clipper2 utilities/tests/examples disabled** via
    `CLIPPER2_TESTS=OFF`, `CLIPPER2_UTILS=OFF`, `CLIPPER2_EXAMPLES=OFF`
    — defaults are ON and pull in `<sys/types.h>`, googletest, etc.
    we don't ship.
 
 ## Upstream PR roadmap
 
-The patches in this directory are carry-patches. Each has a clear
-upstream-friendly form documented in its preamble:
-
-- **Clipper2** patch: file as `#ifndef CLIPPER2_NO_IOSTREAM` guards
-  upstream against AngusJohnson/Clipper2.
-- **Manifold OBJ-I/O** patch (0002): file as `#ifndef MANIFOLD_NO_IOSTREAM`
-  guards upstream against elalish/manifold.
-- **Manifold test-main filesystem** patch (0003): file as
-  `#ifndef MANIFOLD_NO_FILESYSTEM` guards upstream against
-  elalish/manifold. The two manifold patches could be combined upstream
-  under a single `MANIFOLD_WASM_FREESTANDING=ON` CMake option that
-  defines both macros (and the parallel/exception/RTTI flags) together.
-
-Once both upstreams take the patches, the carry-patches drop and we
-just bump the pinned versions.
+The single carry-patch is the verbatim diff of
+[elalish/manifold#1690](https://github.com/elalish/manifold/pull/1690),
+which itself contains a tracking patch for
+[AngusJohnson/Clipper2#1094](https://github.com/AngusJohnson/Clipper2/pull/1094).
+Once #1690 lands the patch drops and the shim just bumps the manifold
+pin past the merge.
 
 ## Opt-in build
 

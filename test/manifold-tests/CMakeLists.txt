@@ -38,9 +38,23 @@ set(_manifold_src "${manifold_SOURCE_DIR}")
 set(_manifold_test_files
     ${_manifold_src}/test/test_main.cpp
     ${_manifold_src}/test/boolean_test.cpp
-    ${_manifold_src}/test/sdf_test.cpp
+    ${_manifold_src}/test/boolean_complex_test.cpp
     ${_manifold_src}/test/cross_section_test.cpp
+    ${_manifold_src}/test/manifoldc_test.cpp
+    ${_manifold_src}/test/sdf_test.cpp
+    ${_manifold_src}/test/smooth_test.cpp
 )
+# Skipped:
+#   * hull_test.cpp, properties_test.cpp, samples_test.cpp — include
+#     `samples.h` (the manifold/samples helper library), which we'd
+#     have to pull in along with the sample-geometry sources.
+#   * manifold_test.cpp — uses std::set + threading constructs without
+#     direct `<set>`/`<thread>` includes; relies on transitive pulls
+#     from headers our libcxx subset doesn't ship.
+#   * polygon_test.cpp — TESTs registered dynamically via
+#     RegisterPolygonTests, which loads from the polygons/ corpus
+#     directory and is no-op'd under MANIFOLD_NO_IOSTREAM — file would
+#     compile but contribute zero tests.
 
 # Each test source compiles with:
 #   * gtest-shim BEFORE real GoogleTest's include path so
@@ -71,10 +85,10 @@ set(_common_compile_flags
     -isystem ${CMAKE_SOURCE_DIR}/libm/include
     -isystem ${CMAKE_SOURCE_DIR}/libc/include
     -I ${_manifold_src}/include
+    -I ${_manifold_src}/bindings/c/include                     # for manifold/manifoldc.h
     -I ${_manifold_src}/test                                   # for test.h
     -I ${_manifold_src}/src                                    # for src/utils.h
     -I ${manifold_BINARY_DIR}/include                          # for generated headers
-    -I ${clipper2_SOURCE_DIR}/CPP/Clipper2Lib/include
 )
 
 # Compile each manifold test source.
@@ -145,14 +159,16 @@ if(WASM_OBJDUMP_EXECUTABLE)
     )
 endif()
 
-# Size budget. Current: ~915 KB (boolean+SDF+cross_section); budget
-# 1.1 MB allows for adding 1-2 more test files of similar shape
-# without immediate breakage. A bigger jump (e.g., adding manifold_test.cpp)
-# would legitimately blow this budget — bump it then with a why-line.
+# Size budget. Current: ~1.07 MB (boolean + boolean_complex +
+# cross_section + manifoldc + sdf + smooth, after the bump-manifold to
+# the in-flight #1690 carry-patch). Budget 1.4 MB gives ~30% headroom
+# for adding 1-2 more test files of similar shape without immediate
+# breakage. Bigger jumps (e.g., adding manifold_test.cpp once
+# <set>/<thread> deps are sorted) bump this with a why-line.
 add_test(NAME manifold_tests_size_budget
     COMMAND bash ${CMAKE_SOURCE_DIR}/test/smoke/check-size.sh
         ${_tests_wasm}
-        1153434
+        1468006
 )
 
 # Test runner: `node tools/wasm-test-harness/run.mjs <wasm>`.

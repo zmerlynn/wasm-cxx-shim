@@ -270,6 +270,26 @@ For any change touching `libc/src/dlmalloc/malloc.c`,
   installed prefix.
 - **Install rules cover headers.** `libm/include/` must be installed,
   or downstream consumers can't `#include <math.h>`.
+- **`FetchContent_Declare(... PATCH_COMMAND ...)` is idempotent.**
+  Re-configures (e.g., from any CMakeLists.txt edit) re-trigger
+  PATCH_COMMAND; vanilla `git apply` then fails on the already-patched
+  source tree. Acceptable mitigations: `UPDATE_DISCONNECTED TRUE` on
+  the FetchContent_Declare (short-circuits the patch step on
+  subsequent configures), or a wrapper `cmake -P` script that does
+  `git apply --reverse --check` first. A bare `PATCH_COMMAND git
+  apply ${PATCH}` with neither mitigation is an **error** — works
+  on a clean tree, breaks the moment the user re-configures.
+- **Order-of-operations on derived options across nested
+  `FetchContent_MakeAvailable` calls.** When a consumer pre-declares
+  package A before package B's MakeAvailable runs, B's CMakeLists
+  runs after A is already populated. Any cache var B sets to
+  influence A's option resolution arrives too late. If a helper has
+  a pre-declare, audit whether a transitive dep of the
+  pre-declared package needs to consume an option set by an
+  intermediate CMakeLists — if so, drop the pre-declare or set the
+  cache var explicitly in the helper. **Warning** if a
+  consumer-pre-declared dep also has cache-var dependencies coming
+  from a nested package.
 
 ### 6. Toolchain & build infrastructure
 
@@ -420,6 +440,18 @@ For any change touching `libc/src/dlmalloc/malloc.c`,
     READMEs that drift when test coverage extends. Either keep
     abstract ("a slice of its tests passes") or commit to updating
     on every test addition. Drift here is a **note**.
+- **API renames / removals propagated to docstrings + caller sites.**
+  When a CMake helper drops or renames an argument (e.g.,
+  `wasm_cxx_shim_add_manifold(CLIPPER2_GIT_TAG ...)` → no longer
+  accepted), audit: (a) the helper's own docstring at the top of the
+  file, (b) every caller site (`grep -rn 'wasm_cxx_shim_add_manifold'`),
+  (c) any README that documents the helper's parameters by name. Same
+  for renamed/removed shipped patches: when `0001-foo.patch` becomes
+  `0001-bar.patch` (or three patches collapse to one), grep all `*.md`
+  for the old patch filenames. A docstring that lists a removed
+  argument is a **warning**; a README that names a removed patch is
+  also a **warning** since a future agent will look for it and be
+  confused.
 
 ### 9. Style for hand-written code
 
