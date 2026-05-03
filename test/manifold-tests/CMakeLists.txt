@@ -38,6 +38,8 @@ set(_manifold_src "${manifold_SOURCE_DIR}")
 set(_manifold_test_files
     ${_manifold_src}/test/test_main.cpp
     ${_manifold_src}/test/boolean_test.cpp
+    ${_manifold_src}/test/sdf_test.cpp
+    ${_manifold_src}/test/cross_section_test.cpp
 )
 
 # Each test source compiles with:

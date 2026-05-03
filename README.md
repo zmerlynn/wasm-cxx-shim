@@ -12,13 +12,14 @@ platforms (WASI imports, JS shims). This project provides the smaller,
 narrower thing you need to compile a self-contained C++ kernel and link
 it against `wasm-bindgen`-style wasm without dragging in either ecosystem.
 
-**Status: v0.2.0.** All three components implemented; CI green on
+**Status: v0.2.0+.** All three components implemented; CI green on
 {Ubuntu, macOS} × {LLVM 20, 21}; the headline `wasm32-unknown-unknown`
 property (zero unexpected imports) is asserted on every wasm we ship.
-A real-world consumer integration — manifold v3.4.1's library + its
-own GoogleTest-based boolean test suite (47/47 passing) — runs end
-to end on top of the shim under Node. See the release notes for the
-full picture.
+A real-world consumer integration — manifold v3.4.1's library + a
+slice of its own GoogleTest-based test suite (71/71 across
+`boolean_test`, `sdf_test`, `cross_section_test`; 47/47 was the
+v0.2.0 baseline) — runs end to end on top of the shim under Node.
+See the release notes for the full picture.
 
 See [`docs/context.md`](docs/context.md) for the design background and
 [`docs/plan.md`](docs/plan.md) for the phased implementation roadmap +
@@ -112,6 +113,7 @@ v0.2.0. End-to-end:
 - **CI** green on Ubuntu + macOS × LLVM 20 + 21, both lightweight build
   and heavyweight manifold integration matrices.
 - **manifold v3.4.1** links + its full C-API runs against the shim;
-  its `boolean_test.cpp` GoogleTest suite passes 47/47 under a generic
+  a slice of its GoogleTest suite (`boolean_test` + `sdf_test` +
+  `cross_section_test` = 71/71) passes under a generic
   `wasm-test-harness` mechanism (see `tools/wasm-test-harness/`,
   `test/manifold-link/`, `test/manifold-tests/`).

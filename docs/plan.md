@@ -320,10 +320,14 @@ Status:
   `boolean_test.cpp` (and manifold's own `test/test_main.cpp` —
   helpers + Options global, with main()+filesystem fixture I/O
   ifdef'd out via patches/0003-manifold-test-main-ifdef-filesystem).
-  47/47 tests pass. The harness mechanism generalizes: future
-  consumers (using GoogleTest, Catch2, doctest, or a custom framework)
-  get a small adapter header under `tools/wasm-test-harness/adapters/`.
-  Realizes the "run a portion of consumer CI in ours" framing.
+  47/47 tests pass at v0.2.0. Coverage extended post-v0.2.0 to also
+  include `sdf_test.cpp` (9 tests, libm-heavy) and
+  `cross_section_test.cpp` (15 tests, 2D Clipper2 path) — all 71
+  passing, no new symbol surface needed. The harness mechanism
+  generalizes: future consumers (using GoogleTest, Catch2, doctest,
+  or a custom framework) get a small adapter header under
+  `tools/wasm-test-harness/adapters/`. Realizes the "run a portion
+  of consumer CI in ours" framing.
 - **Phase 7-A — not started**. Begins after 7-B1+B2 land.
 
 CI integration (running 7-B1/7-B2 jobs in CI) is a follow-up PR after
