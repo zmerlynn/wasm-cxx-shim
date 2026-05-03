@@ -10,64 +10,17 @@
 # is multi-MB and minutes to build — not something we want to inflict
 # on every developer's edit-build loop.
 #
-# Carry-patches under patches/ are applied via FetchContent's
-# PATCH_COMMAND. Each patch corresponds to a specific upstream-side
-# fix that hasn't been merged yet; document the upstream PR (or its
-# absence) in the patch file's header.
+# Dogfoods the wasm_cxx_shim_add_manifold() helper (cmake/WasmCxxShim
+# Manifold.cmake): the high-change-rate parts of the cocktail
+# (FetchContent pins, patches, manifold's CMake options, base
+# compile flags) are now centralized there. This file handles only
+# the shim-side specifics (`__config_site`, `<mutex>` stub, libcxx
+# headers location).
 
-include(FetchContent)
-
-# Pin manifold version explicitly. Bumping this is a deliberate act
-# tracked in this repo's git history. Clipper2 (and any other deps
-# manifold pulls via its own FetchContent) come from manifold's
-# pinned versions.
-set(_manifold_link_manifold_tag "v3.4.1")
-
-# Pre-declare Clipper2 with our patch BEFORE manifold's CMake runs.
-# CMake's first-declaration-wins makes manifold's own
-# FetchContent_Declare(Clipper2 ...) silently ignored, so our pinned
-# version + patch are used. We must match manifold's exact GIT_TAG
-# (the SHA, NOT the Clipper2_2.0.1 release tag) and SOURCE_SUBDIR
-# CPP — see manifold's cmake/manifoldDeps.cmake for the canonical
-# declaration. If manifold bumps its Clipper2 pin, this SHA must move
-# in lockstep or our pre-declaration shadows manifold's intent.
-FetchContent_Declare(Clipper2
-    GIT_REPOSITORY https://github.com/AngusJohnson/Clipper2.git
-    GIT_TAG        46f639177fe418f9689e8ddb74f08a870c71f5b4
-    SOURCE_SUBDIR  CPP
-    PATCH_COMMAND  git apply --ignore-whitespace -p0
-                   ${CMAKE_CURRENT_SOURCE_DIR}/patches/0001-clipper2-strip-iostream.patch
-    UPDATE_DISCONNECTED TRUE
-)
-
-FetchContent_Declare(manifold
-    GIT_REPOSITORY https://github.com/elalish/manifold.git
-    GIT_TAG        ${_manifold_link_manifold_tag}
-    GIT_SHALLOW    TRUE
-    PATCH_COMMAND  git apply --ignore-whitespace -p0
-                   ${CMAKE_CURRENT_SOURCE_DIR}/patches/0002-manifold-ifdef-iostream.patch
-                   ${CMAKE_CURRENT_SOURCE_DIR}/patches/0003-manifold-test-main-ifdef-filesystem.patch
-    UPDATE_DISCONNECTED TRUE
-)
-
-# Manifold's options: turn off everything we can. We want the C API
-# library + nothing else — no tests, no examples, no Python/JS bindings,
-# no parallelism (we don't have threads), and no exceptions/RTTI.
-set(MANIFOLD_TEST OFF CACHE BOOL "" FORCE)
-set(MANIFOLD_CBIND ON CACHE BOOL "" FORCE)
-set(MANIFOLD_PYBIND OFF CACHE BOOL "" FORCE)
-set(MANIFOLD_JSBIND OFF CACHE BOOL "" FORCE)
-set(MANIFOLD_PAR OFF CACHE BOOL "" FORCE)  # serial backend (no TBB)
-set(MANIFOLD_EXCEPTIONS OFF CACHE BOOL "" FORCE)
-set(MANIFOLD_DEBUG OFF CACHE BOOL "" FORCE)
-set(MANIFOLD_EXPORT OFF CACHE BOOL "" FORCE)  # no assimp / no meshio
-
-# Clipper2's options (when pulled via FetchContent, its CMakeLists
-# defaults Tests/Utils/Examples ON; they pull in <sys/types.h>,
-# <sys/stat.h>, googletest, etc. that we don't ship).
-set(CLIPPER2_TESTS    OFF CACHE BOOL "" FORCE)
-set(CLIPPER2_UTILS    OFF CACHE BOOL "" FORCE)
-set(CLIPPER2_EXAMPLES OFF CACHE BOOL "" FORCE)
+# Load the helper. (When this CMakeLists is consumed via the parent
+# project's add_subdirectory, find_package isn't in play; include it
+# directly from the source tree.)
+include(${CMAKE_SOURCE_DIR}/cmake/WasmCxxShimManifold.cmake)
 
 # Reuse the smoke test's libc++ header detection.
 get_filename_component(_clang_dir "${CMAKE_CXX_COMPILER}" DIRECTORY)
@@ -78,27 +31,14 @@ if(NOT EXISTS "${_libcxx_headers_for_manifold}/vector")
         "manifold-link: libc++ headers not found at ${_libcxx_headers_for_manifold}.")
 endif()
 
-# Pre-emptively configure manifold's wasm-friendly compile flags. Real
-# upstream PR for MANIFOLD_WASM_FREESTANDING=ON would make this a
-# single switch; for now we set the underlying flags directly.
-# `add_compile_options` propagates to subdirectories — manifold's
-# build (added via FetchContent_MakeAvailable) inherits these.
+# `-isystem` chain — caller responsibility per the helper's docstring.
+# Each `-isystem PATH` pair MUST be wrapped in `SHELL:` or CMake's
+# compile-flag deduplication collapses repeat `-isystem` flags
+# together (only the first path is recognized; the rest are treated
+# as linker inputs and produce "input unused" warnings — confusing
+# because the build still attempts to compile but with the wrong
+# search path).
 add_compile_options(
-    -fno-exceptions
-    -fno-rtti
-    -nostdlib
-    -nostdinc++
-    # Strip manifold's iostream-using OBJ I/O paths. The patch
-    # at patches/0002-manifold-ifdef-iostream.patch wraps them
-    # in `#ifndef MANIFOLD_NO_IOSTREAM`. Future upstream PR can
-    # use the same macro name for compatibility.
-    -DMANIFOLD_NO_IOSTREAM=1
-    # Each `-isystem PATH` pair MUST be wrapped in `SHELL:` or CMake's
-    # compile-flag deduplication collapses repeat `-isystem` flags
-    # together (only the first path is recognized; the rest are treated
-    # as linker inputs and produce "input unused" warnings — confusing
-    # because the build still attempts to compile but with the wrong
-    # search path).
     "SHELL:-isystem ${CMAKE_SOURCE_DIR}/test/smoke/include"          # __config_site override
     "SHELL:-isystem ${CMAKE_SOURCE_DIR}/test/manifold-link/include"  # <mutex> stub etc.
     "SHELL:-isystem ${_libcxx_headers_for_manifold}"
@@ -106,7 +46,8 @@ add_compile_options(
     "SHELL:-isystem ${CMAKE_SOURCE_DIR}/libc/include"
 )
 
-FetchContent_MakeAvailable(Clipper2 manifold)
+# FetchContent + patches + options + base compile flags.
+wasm_cxx_shim_add_manifold()
 
 # ---- Probe: tiny C TU calling manifold's C API ----
 

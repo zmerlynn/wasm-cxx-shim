@@ -70,6 +70,35 @@ target_link_libraries(myproject PRIVATE
 some of them (e.g., satisfying libm from Rust's `libm` crate via FFI
 instead of pulling ours).
 
+## Building manifold against the shim
+
+For the common case — building [manifold](https://github.com/elalish/manifold)
++ Clipper2 against the shim — the package config ships a helper:
+
+```cmake
+find_package(wasm-cxx-shim REQUIRED COMPONENTS libc libm libcxx)
+wasm_cxx_shim_add_manifold()  # uses the tested-pin defaults
+
+target_link_libraries(my-wasm PRIVATE
+    wasm-cxx-shim::libc wasm-cxx-shim::libm wasm-cxx-shim::libcxx
+    manifoldc manifold Clipper2
+    my-libcxx-extras)  # consumer-provided; see test/manifold-link/
+```
+
+The helper does FetchContent for both projects, applies the three
+carry-patches (`MANIFOLD_NO_IOSTREAM` / `MANIFOLD_NO_FILESYSTEM` /
+`CLIPPER2_NO_IOSTREAM`), and flips manifold + Clipper2's CMake options
+to disable the bits the shim doesn't support (Python/JS bindings,
+threading, googletest pulls, etc.). The tested-pin combination for
+each shim release is documented in [`CHANGELOG.md`](CHANGELOG.md);
+overrides for arbitrary refs + custom patch sets are supported via
+the helper's named arguments — see
+[`cmake/WasmCxxShimManifold.cmake`](cmake/WasmCxxShimManifold.cmake)
+for the full API.
+
+The shim's [`test/manifold-link/`](test/manifold-link/) is a worked
+example that consumes this helper.
+
 ## Why three components, not one
 
 If someone publishes a better libm package tomorrow, you should be able

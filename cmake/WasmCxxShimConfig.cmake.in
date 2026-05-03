@@ -60,3 +60,15 @@ if(NOT wasm-cxx-shim_FIND_COMPONENTS)
 endif()
 
 check_required_components(wasm-cxx-shim)
+
+# Optional integration helpers for known consumers (manifold, etc.).
+# Loaded automatically so callers can do
+#     find_package(wasm-cxx-shim REQUIRED COMPONENTS libc libm libcxx)
+#     wasm_cxx_shim_add_manifold()
+# without an extra include() step. Helpers are namespaced under
+# wasm_cxx_shim_* and self-contained — adding more here doesn't grow
+# the find_package surface.
+set(_wcs_manifold_helper "${CMAKE_CURRENT_LIST_DIR}/WasmCxxShimManifold.cmake")
+if(EXISTS "${_wcs_manifold_helper}")
+    include("${_wcs_manifold_helper}")
+endif()

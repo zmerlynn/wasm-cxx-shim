@@ -34,3 +34,16 @@ add_test(NAME consumer_install_and_build
 
 # Don't make this test depend on smoke artifacts — it runs install
 # itself, which depends on the build artifacts via CMake's normal rules.
+
+# Source-tree API smoke for the wasm_cxx_shim_add_manifold() helper.
+# Loads cmake/WasmCxxShimManifold.cmake via cmake -P and asserts the
+# command is registered, defaults are populated, and the shipped
+# patch files resolve. Doesn't FetchContent (the default-args path is
+# exercised by the manifold matrix); this catches "file moved",
+# "captured the wrong CMAKE_CURRENT_LIST_DIR", "default tag nuked"
+# regressions cheaply on the lightweight matrix too.
+add_test(NAME wasm_cxx_shim_helper_api_smoke
+    COMMAND ${CMAKE_COMMAND} -P
+        ${CMAKE_SOURCE_DIR}/cmake/check-manifold-helper.cmake
+        ${CMAKE_SOURCE_DIR}/cmake/WasmCxxShimManifold.cmake
+)

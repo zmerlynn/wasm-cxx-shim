@@ -43,9 +43,11 @@ the pin.
 
 ## Carry-patches
 
-Live under `patches/`. Each is a regular `git format-patch`-style file
-applied via FetchContent's `PATCH_COMMAND`. Document the upstream PR
-(or its absence) in the patch file's header.
+Live under [`cmake/manifold-patches/`](../../cmake/manifold-patches/)
+(canonical location — alongside the `wasm_cxx_shim_add_manifold()`
+helper that applies them via FetchContent's `PATCH_COMMAND`). Each is
+a `git diff --no-prefix`-style file with an upstream-PR-target note in
+its header.
 
 Current patches:
 
@@ -101,12 +103,14 @@ What it took to get green:
    before user `-isystem` paths, which was breaking libc++'s
    `<cstddef>` → `<stddef.h>` resolution chain. Broadly useful — not
    manifold-specific.
-3. **`patches/0001-clipper2-strip-iostream.patch`** — strips iostream
-   `operator<<` / `OutlinePolyPath*` from Clipper2 v2.0.1 headers.
-4. **`patches/0002-manifold-ifdef-iostream.patch`** — wraps manifold's
-   OBJ I/O in `#ifndef MANIFOLD_NO_IOSTREAM`. Three blocks:
-   `FromChars` template, all of `WriteOBJ*`/`ReadOBJ*` in `impl.cpp`,
-   and the C-API `manifold_*_obj` bindings in `manifoldc.cpp`.
+3. **`cmake/manifold-patches/0001-clipper2-strip-iostream.patch`** —
+   strips iostream `operator<<` / `OutlinePolyPath*` from Clipper2
+   v2.0.1 headers.
+4. **`cmake/manifold-patches/0002-manifold-ifdef-iostream.patch`** —
+   wraps manifold's OBJ I/O in `#ifndef MANIFOLD_NO_IOSTREAM`. Three
+   blocks: `FromChars` template, all of `WriteOBJ*`/`ReadOBJ*` in
+   `impl.cpp`, and the C-API `manifold_*_obj` bindings in
+   `manifoldc.cpp`.
 5. **Stub `include/mutex`** — no-op `std::mutex`/`recursive_mutex`/
    `lock_guard`/`scoped_lock`/`unique_lock` because libc++ gates
    these behind `_LIBCPP_HAS_THREADS`.
