@@ -87,6 +87,8 @@ endif()
 if(WASM_CXX_SHIM_BUILD_TESTS)
     add_subdirectory(test/smoke)
     add_subdirectory(test/consumer)
+    add_subdirectory(test/libm-check)
+    add_subdirectory(test/negative-link)
 endif()
 
 if(WASM_CXX_SHIM_BUILD_MANIFOLD_LINK)

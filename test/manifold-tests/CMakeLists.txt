@@ -145,6 +145,16 @@ if(WASM_OBJDUMP_EXECUTABLE)
     )
 endif()
 
+# Size budget. Current: ~915 KB (boolean+SDF+cross_section); budget
+# 1.1 MB allows for adding 1-2 more test files of similar shape
+# without immediate breakage. A bigger jump (e.g., adding manifold_test.cpp)
+# would legitimately blow this budget — bump it then with a why-line.
+add_test(NAME manifold_tests_size_budget
+    COMMAND bash ${CMAKE_SOURCE_DIR}/test/smoke/check-size.sh
+        ${_tests_wasm}
+        1153434
+)
+
 # Test runner: `node tools/wasm-test-harness/run.mjs <wasm>`.
 find_program(_manifold_tests_node NAMES node nodejs)
 if(_manifold_tests_node)
