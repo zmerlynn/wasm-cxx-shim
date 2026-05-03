@@ -67,6 +67,16 @@ if(WASM_OBJDUMP_EXECUTABLE)
     )
 endif()
 
+# Size budget. Current: ~3.5 KB; budget 6 KB. The self-test wasm is
+# essentially harness.a + a test source — drift from this baseline
+# would mean either the harness grew significantly or the self-test
+# source did, both worth surfacing.
+add_test(NAME harness_self_test_size_budget
+    COMMAND bash ${CMAKE_SOURCE_DIR}/test/smoke/check-size.sh
+        ${_self_wasm}
+        6144
+)
+
 find_program(_self_test_node NAMES node nodejs)
 if(_self_test_node)
     add_test(NAME wasm_test_harness_self_test

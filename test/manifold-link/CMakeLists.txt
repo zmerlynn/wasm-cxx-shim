@@ -185,6 +185,15 @@ if(WASM_OBJDUMP_EXECUTABLE)
     )
 endif()
 
+# Size budget. Current: ~340 KB; budget 450 KB to absorb minor growth
+# (manifold's library code is the dominant contributor; a meaningful
+# library bump may legitimately push past this).
+add_test(NAME manifold_link_size_budget
+    COMMAND bash ${CMAKE_SOURCE_DIR}/test/smoke/check-size.sh
+        ${_probe_wasm}
+        460800
+)
+
 find_program(_manifold_link_node NAMES node nodejs)
 if(_manifold_link_node)
     add_test(NAME manifold_link_run

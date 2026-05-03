@@ -102,6 +102,13 @@ if(WASM_OBJDUMP_EXECUTABLE)
     )
 endif()
 
+# Size budget. Current: ~13.5 KB; budget 20 KB to absorb minor growth.
+add_test(NAME smoke_size_budget
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/check-size.sh
+        ${_smoke_wasm}
+        20480
+)
+
 if(NODE_EXECUTABLE)
     add_test(NAME smoke_run
         COMMAND ${NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run.mjs ${_smoke_wasm}
