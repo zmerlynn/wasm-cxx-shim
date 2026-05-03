@@ -116,6 +116,15 @@ configure_package_config_file(
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/wasm-cxx-shimConfig.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/wasm-cxx-shimConfigVersion.cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/WasmCxxShimManifold.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/wasm-cxx-shim
+)
+
+# Integration-helper patches. Installed alongside the helper module
+# so that wasm_cxx_shim_add_manifold()'s ${CMAKE_CURRENT_LIST_DIR}/
+# manifold-patches/ resolution works uniformly in source + install
+# trees.
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake/manifold-patches
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/wasm-cxx-shim
 )
 

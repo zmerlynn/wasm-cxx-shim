@@ -10,6 +10,20 @@ project(wasm-cxx-shim-consumer-test
 
 find_package(wasm-cxx-shim REQUIRED COMPONENTS libc libm)
 
+# The find_package config auto-loads the wasm_cxx_shim_add_manifold()
+# integration helper. Verify the auto-load worked end-to-end against
+# the install tree — a regression in WasmCxxShimConfig.cmake.in's
+# optional include logic (wrong path, file-not-found-but-no-error,
+# missing install rule for the helper or its patches) would silently
+# break the helper for downstream consumers and only surface when
+# someone actually tried to call it.
+if(NOT COMMAND wasm_cxx_shim_add_manifold)
+    message(FATAL_ERROR
+        "wasm_cxx_shim_add_manifold() not registered after find_package — "
+        "WasmCxxShimManifold.cmake's auto-load via WasmCxxShimConfig.cmake.in "
+        "is broken (check helper install rule + Config's optional include).")
+endif()
+
 # Tiny C TU that exercises symbols from BOTH libc (malloc/free,
 # memset) and libm (sqrt). Linking should resolve everything in-wasm.
 add_library(consumer_probe STATIC consumer_probe.c)

@@ -327,8 +327,17 @@ Status:
   generalizes: future consumers (using GoogleTest, Catch2, doctest,
   or a custom framework) get a small adapter header under
   `tools/wasm-test-harness/adapters/`. Realizes the "run a portion
-  of consumer CI in ours" framing.
-- **Phase 7-A — not started**. Begins after 7-B1+B2 land.
+  of consumer CI in ours" framing. Post-v0.2.0 follow-up (PR #10):
+  the high-change-rate cocktail (FetchContent pins, three carry-
+  patches, manifold/Clipper2 CMake options) factored into a
+  `wasm_cxx_shim_add_manifold()` helper at
+  `cmake/WasmCxxShimManifold.cmake`, auto-loaded by
+  `find_package(wasm-cxx-shim)`. Patches moved to
+  `cmake/manifold-patches/` (canonical home next to the helper).
+  `test/manifold-link/` dogfoods the helper.
+- **Phase 7-A — DONE**. `manifold-csg` (Rust bindings to manifold)
+  builds + runs on `wasm32-unknown-unknown` against the shim,
+  unblocking `wasm-bindgen` consumers.
 
 CI integration (running 7-B1/7-B2 jobs in CI) is a follow-up PR after
 the merges; the local ctest is green but the heavyweight build

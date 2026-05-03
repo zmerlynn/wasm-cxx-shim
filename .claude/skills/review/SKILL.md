@@ -252,6 +252,17 @@ For any change touching `libc/src/dlmalloc/malloc.c`,
     `-Wno-*` flags from wasi-libc (verify against the list in
     `docs/plan.md`).
   - libcxx: `-Os -fno-exceptions -fno-rtti`.
+- **CMake helper modules capture `CMAKE_CURRENT_LIST_DIR` at module
+  load, not in function bodies.** Helpers that resolve shipped data
+  (e.g., `cmake/WasmCxxShimManifold.cmake` resolving its sibling
+  `manifold-patches/` directory) must `set(_helper_dir "${CMAKE_CURRENT_LIST_DIR}")`
+  at the module's top level and reference `${_helper_dir}` inside the
+  function. Inside the function, `${CMAKE_CURRENT_LIST_DIR}` resolves
+  to the *caller's* CMakeLists path, not the module's — silently
+  broken when called from a non-shim CMakeLists. A function that
+  uses `${CMAKE_CURRENT_LIST_DIR}` directly to find a sibling file
+  is a **warning** (might happen to work today; will break the
+  moment the helper is consumed from a different location).
 - **`find_package(wasm-cxx-shim COMPONENTS …)` works.** Verified via
   `test/consumer/`. Failure mode: `find_package` succeeds but the
   resulting target has no usable interface (empty include path,

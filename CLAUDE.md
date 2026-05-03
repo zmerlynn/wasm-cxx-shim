@@ -349,6 +349,26 @@ them.
   than the CMake source implies. We hit this when adding the harness
   self-test in PR #4 and fixed it by hoisting `enable_testing()`
   above all test-subdir adds in the top-level CMakeLists.
+- **`CMAKE_CURRENT_LIST_DIR` inside a function body resolves to the
+  *caller's* location, not the module's.** When writing a CMake
+  helper module that needs to find files it ships alongside (e.g.,
+  `WasmCxxShimManifold.cmake` resolving its sibling
+  `manifold-patches/` directory), capture the path at module
+  load-time, OUTSIDE any function:
+  ```cmake
+  # at module top-level
+  set(_helper_dir "${CMAKE_CURRENT_LIST_DIR}")
+  function(my_helper)
+      set(_data "${_helper_dir}/data")  # ✓ resolves to module's dir
+      # set(_data "${CMAKE_CURRENT_LIST_DIR}/data")  # ✗ caller's dir
+  endfunction()
+  ```
+  The function-body form silently breaks when the helper is called
+  from a CMakeLists at a different path. We got this right in
+  `cmake/WasmCxxShimManifold.cmake` (PR #10) but the failure mode is
+  "patches not found at expected path" with no obvious connection to
+  the bug, so future helpers should follow the captured-at-top
+  pattern.
 
 ### wasm-ld and test wasms
 
