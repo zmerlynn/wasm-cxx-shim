@@ -416,6 +416,31 @@ them.
   as the implementation. Silently rescoping a phase produces
   documentation that says one thing and code that does another, and
   the gap compounds.
+- **Doc-staleness sweep on release prep.** Every release-prep PR
+  (and any PR that flips a phase/feature status from in-flight to
+  DONE) should grep all `*.md` for stale markers before merge:
+  ```sh
+  grep -rn -E "v0\.[0-9]|pre-CI|TBD|TODO|coming|not started|in flight|NEXT" \
+      --include='*.md' --exclude=CHANGELOG.md --exclude-dir=build .
+  ```
+  Hits are either intentional historical narrative ("hit me during
+  the v0.1 implementation pass") or stale text that needs updating.
+  The common drift sites we've hit so far:
+  - README's intro Status paragraph + a duplicated `## Status` H2
+    near the bottom. They diverge across releases. Solution: pick
+    one (deleted the H2 in PR #12) and link out to CHANGELOG.md +
+    GitHub releases for per-version detail.
+  - Hardcoded version numbers in evergreen prose ("Status: v0.2.0").
+    Prefer abstract framing or a CHANGELOG/releases link. The
+    CHANGELOG legitimately enumerates versions; the README shouldn't.
+  - `docs/plan.md` Phase headers stuck on "NEXT" or "in flight" for
+    phases that have landed. The plan is supposed to be the
+    authoritative status; flag any drift here.
+  - Test counts in README narrative prose drifting when coverage
+    extends — keep abstract ("a slice of its tests passes") or
+    commit to updating on every test addition. Detailed counts live
+    in `test/manifold-tests/README.md` where they're maintained
+    alongside the test list itself.
 
 ## Things to NEVER do
 
