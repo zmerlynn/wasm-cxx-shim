@@ -332,6 +332,16 @@ Status:
 - **Phase 7-A — DONE**. `manifold-csg` (Rust bindings to manifold)
   builds + runs on `wasm32-unknown-unknown` against the shim,
   unblocking `wasm-bindgen` consumers.
+- **Phase 7 follow-up — IN-FLIGHT (PR #13, v0.4.0-alpha.1)**. Bumped
+  the manifold pin to upstream master and consolidated the three
+  iostream patches into a single vendored diff of
+  [elalish/manifold#1690](https://github.com/elalish/manifold/pull/1690)
+  (the upstream PR adding `MANIFOLD_NO_IOSTREAM` natively). Helper
+  refactor: drops the Clipper2 pre-declare (manifold owns it now)
+  and lets manifold's option chain propagate the macros as PUBLIC
+  compile defs. Test coverage 71 → 121. Pre-release while #1690 is
+  in upstream review; once it merges and the pin moves past it, the
+  carry-patch drops entirely and v0.4.0 (non-alpha) ships.
 
 CI integration (running 7-B1/7-B2 jobs in CI) is a follow-up PR after
 the merges; the local ctest is green but the heavyweight build

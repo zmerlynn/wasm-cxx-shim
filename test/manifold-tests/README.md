@@ -5,14 +5,17 @@ the shim. Validates end-to-end correctness of the full stack
 (libc + libm + libcxx + libcxx-extras + manifold + Clipper2) via a
 real consumer's tests, not just a probe.
 
-Currently runs three test files from manifold v3.4.1 — **71/71
+Currently runs six test files from upstream manifold — **121/121
 tests pass**:
 
-| File | Tests | Surface |
-|---|---|---|
-| `test/boolean_test.cpp`        | 47 | 3D Boolean ops (union, difference, intersect, Minkowski, ...) |
-| `test/sdf_test.cpp`            |  9 | Signed distance fields → marching cubes; libm-heavy |
-| `test/cross_section_test.cpp`  | 15 | 2D ops via Clipper2 (offset, hull, fill rules, decompose) |
+| File | Surface |
+|---|---|
+| `test/boolean_test.cpp`         | 3D Boolean ops (union, difference, intersect, Minkowski, ...) |
+| `test/boolean_complex_test.cpp` | Complex Boolean fixtures (gear permutations, sphere/cube unions, ...) |
+| `test/cross_section_test.cpp`   | 2D ops via Clipper2 (offset, hull, fill rules, decompose) |
+| `test/manifoldc_test.cpp`       | C-ABI bindings (CSG ops, transforms, level set) |
+| `test/sdf_test.cpp`             | Signed distance fields → marching cubes; libm-heavy |
+| `test/smooth_test.cpp`          | Surface smoothing (Csaszar, mirrored, gyroid, ...) |
 
 ## What this exercises
 
@@ -69,9 +72,10 @@ Append the manifold test source path to `_manifold_test_files` in
 set(_manifold_test_files
     ${_manifold_src}/test/test_main.cpp
     ${_manifold_src}/test/boolean_test.cpp
-    ${_manifold_src}/test/sdf_test.cpp
+    ${_manifold_src}/test/boolean_complex_test.cpp
     ${_manifold_src}/test/cross_section_test.cpp
-    ${_manifold_src}/test/manifold_test.cpp   # <- add new ones here
+    # ... existing entries ...
+    ${_manifold_src}/test/your_new_test.cpp   # <- add new ones here
 )
 ```
 
@@ -85,28 +89,27 @@ Things that may need extending when you do:
 - **The libcxx-extras object** at `test/manifold-link/libcxx-extras.cpp`
   — new tests may exercise `<memory>` / `<new>` paths that need
   additional libc++ source-file symbols.
-- **The carry-patches** under `test/manifold-link/patches/` — if a new
-  test file uses `<filesystem>` / `<fstream>` / threading directly,
-  either extend `0003-manifold-test-main-ifdef-filesystem.patch` to
-  cover those bits or write a new patch. Note that test files
-  depending on the `samples` library (TorusKnot, MengerSponge, etc.)
-  will need that library wired in too — manifold gates `samples` on
-  `MANIFOLD_TEST=ON` which we have OFF, so it's not currently built.
+- **`samples` library**: tests that include `samples.h` (e.g.,
+  `hull_test.cpp`, `properties_test.cpp`, `samples_test.cpp`) need the
+  manifold/samples helper library + sample-geometry sources wired in.
+  Manifold gates `samples` on `MANIFOLD_TEST=ON` which we have OFF, so
+  it's not currently built.
+- **Direct `<set>`/`<thread>` use**: tests like `manifold_test.cpp`
+  reference `std::set` / threading constructs without a direct
+  `#include <set>` / `<thread>`, relying on transitive pulls from
+  headers our libcxx subset doesn't ship. Adding such a test means
+  either patching the test source or extending the libcxx subset.
 
 ## Carry-patch dependency
 
-This directory inherits all patches from `test/manifold-link/` via
-the shared `FetchContent_Declare(manifold ...)` call. Specifically:
-
-- `0002-manifold-ifdef-iostream.patch` — strips iostream from
-  manifold's library code (transitively used by tests).
-- `0003-manifold-test-main-ifdef-filesystem.patch` — strips
-  filesystem-using bits from `test/test_main.cpp`. Without this,
-  compiling manifold's `test_main.cpp` would need either a real
-  `<filesystem>` (we don't have one) or hand-vendoring its helpers
-  (which is what an earlier draft of this directory did).
-
-Both are documented in `test/manifold-link/README.md`.
+This directory inherits the carry-patch applied at the
+`test/manifold-link/` level via the shared
+`FetchContent_Declare(manifold ...)` call. The single carry-patch
+(`cmake/manifold-patches/0001-manifold-no-iostream.patch`) provides
+manifold's `MANIFOLD_NO_IOSTREAM` build option, which transitively
+strips iostream/filesystem-using bits from manifold's library code,
+its `test/test_main.cpp` fixture helpers, and the bundled Clipper2
+headers. Documented in `test/manifold-link/README.md`.
 
 ## Build & run
 
@@ -125,7 +128,7 @@ node tools/wasm-test-harness/run.mjs \
     build/wasm32/test/manifold-tests/manifold-tests.wasm
 ```
 
-Expected output ends with: `wasm-test-harness: 71 passed, 0 failed, 71 total`.
+Expected output ends with: `wasm-test-harness: 121 passed, 0 failed, 121 total`.
 
 ## Why this exists
 

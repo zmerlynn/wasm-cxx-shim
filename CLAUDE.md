@@ -369,6 +369,38 @@ them.
   "patches not found at expected path" with no obvious connection to
   the bug, so future helpers should follow the captured-at-top
   pattern.
+- **`FetchContent` `PATCH_COMMAND` is not idempotent by default.** The
+  patch step re-runs on every CMake re-configure (any CMakeLists.txt
+  edit triggers it). Vanilla `git apply` then fails on the
+  already-patched source tree with "patch does not apply" — and the
+  failure mode is mysterious because nothing in the diff explains why
+  `cmake --build` started failing after a trivial edit. Two known fixes:
+    1. `UPDATE_DISCONNECTED TRUE` on the `FetchContent_Declare(...)`
+       call short-circuits the patch step on subsequent configures.
+       Simplest when you control the declare site (e.g., the shim's
+       own `wasm_cxx_shim_add_manifold()` helper uses this).
+    2. A wrapper `cmake -P` script that does `git apply --reverse
+       --check` first and only applies if not already applied. Use this
+       when `UPDATE_DISCONNECTED` isn't appropriate (e.g., a library
+       wants its own FetchContent_Declare to be re-applyable on every
+       configure for development workflows). Pattern lives at
+       `manifold-upstream/cmake/patches/apply-clipper2-patch.cmake` in
+       the in-flight #1690.
+- **Order-of-operations with `FetchContent_MakeAvailable` and a
+  consumer pre-declared transitive dep.** When a consumer (the shim)
+  pre-declares package A (Clipper2) before package B (manifold) does
+  `FetchContent_MakeAvailable(B)`, B's CMakeLists runs *after* A is
+  already populated and added as a subdirectory. Any cache var that B
+  sets to influence A's option resolution arrives *too late* — A's
+  `option()`s have already evaluated to their defaults. We hit this
+  trying to make `MANIFOLD_NO_IOSTREAM=ON` propagate to
+  `CLIPPER2_NO_IOSTREAM=ON` (manifold #1690 sets the latter from the
+  former in `manifoldDeps.cmake`); shim's pre-declare meant manifold's
+  derivation never reached Clipper2's option. Fix: drop the
+  pre-declare and let the inner FetchContent declaration win, so the
+  derivation happens in the right order. Pre-declaration is a
+  workaround for injecting patches that the upstream doesn't carry —
+  once those patches move upstream, the workaround stops being needed.
 
 ### wasm-ld and test wasms
 
@@ -441,6 +473,18 @@ them.
     commit to updating on every test addition. Detailed counts live
     in `test/manifold-tests/README.md` where they're maintained
     alongside the test list itself.
+- **Don't claim a test failure is "pre-existing" without verifying on
+  a default build.** When a test fails under a non-default config
+  (e.g., `MANIFOLD_NO_IOSTREAM=ON`), it's tempting to assume the
+  failure is upstream-pre-existing and unrelated. Verify by running
+  the same test on a default build *before* claiming the failure is
+  unrelated. Cost of getting this wrong: a real bug that I introduced
+  propagated from an open upstream PR through the shim's integration
+  test and into the alpha-tagging plan, until the user explicitly
+  questioned the claim. Specific case: `BooleanComplex.CraycloudBool`
+  passes on default builds; only failed because the asymmetric stub
+  for `ReadTestOBJ` returned an empty `Manifold`, breaking the test's
+  assertion that the boolean output was non-empty.
 
 ## Things to NEVER do
 

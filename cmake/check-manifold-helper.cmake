@@ -32,26 +32,18 @@ if(NOT COMMAND wasm_cxx_shim_add_manifold)
         "wasm_cxx_shim_add_manifold() command not registered after include")
 endif()
 
-# Default tags should be non-empty (catches accidental nuking + typos).
+# Default tag should be non-empty (catches accidental nuking + typos).
 if(NOT _wasm_cxx_shim_manifold_default_manifold_tag)
     message(FATAL_ERROR "default manifold tag is empty")
 endif()
-if(NOT _wasm_cxx_shim_manifold_default_clipper2_tag)
-    message(FATAL_ERROR "default Clipper2 tag is empty")
+
+# Shipped carry-patch must resolve. Catches "file moved" / "captured
+# the wrong CMAKE_CURRENT_LIST_DIR" / "install rule missed a file".
+set(_p "${_wasm_cxx_shim_manifold_helper_dir}/manifold-patches/0001-manifold-no-iostream.patch")
+if(NOT EXISTS "${_p}")
+    message(FATAL_ERROR "shipped patch missing: ${_p}")
 endif()
 
-# Shipped patches must resolve. Catches "file moved" / "captured the
-# wrong CMAKE_CURRENT_LIST_DIR" / "install rule missed a file".
-foreach(_patch IN ITEMS
-        "0001-clipper2-strip-iostream.patch"
-        "0002-manifold-ifdef-iostream.patch"
-        "0003-manifold-test-main-ifdef-filesystem.patch")
-    set(_p "${_wasm_cxx_shim_manifold_helper_dir}/manifold-patches/${_patch}")
-    if(NOT EXISTS "${_p}")
-        message(FATAL_ERROR "shipped patch missing: ${_p}")
-    endif()
-endforeach()
-
 message(STATUS
-    "helper API smoke OK: defaults [manifold=${_wasm_cxx_shim_manifold_default_manifold_tag}, "
-    "clipper2=${_wasm_cxx_shim_manifold_default_clipper2_tag}], 3 patches resolved")
+    "helper API smoke OK: default manifold pin=${_wasm_cxx_shim_manifold_default_manifold_tag}, "
+    "carry-patch resolved")
