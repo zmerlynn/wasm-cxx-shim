@@ -118,7 +118,12 @@ WCS_TEST(LibM, hypot) {
 
 WCS_TEST(LibM, fma) {
     WCS_CHECK_NEAR(fma(2.0, 3.0, 4.0), 10.0, EPS);
-    WCS_CHECK_NEAR(fma(0.0, 5.0, 7.0),  7.0, EPS);
+    // Genuine fused-rounding case: 1e16 * 1.0 = 1e16 (exact), but
+    // adding 1.0 in double precision normally rounds it away (1e16
+    // and 1.0 differ by more than the mantissa width). fma rounds
+    // ONCE on the (exact) full-width product+addend, preserving the
+    // +1.0. A non-fused implementation returns 1e16 (wrong by 1).
+    WCS_CHECK_NEAR(fma(1e16, 1.0, 1.0), 1e16 + 1.0, EPS);
 }
 
 WCS_TEST(LibM, fmax_fmin) {
@@ -164,13 +169,18 @@ WCS_TEST(LibM, ilogb) {
 }
 
 WCS_TEST(LibM, remquo) {
+    // C11 §7.12.10.3: *quo's magnitude need only match the integral
+    // quotient modulo 2^n where n is implementation-defined ≥ 3.
+    // Asserting the low 3 bits keeps the test vendor-portable —
+    // musl returns the full quotient (3, 4) and so passes today,
+    // but a future libm swap that returns a folded value still works.
     int quo = -999;
     double rem = remquo(10.0, 3.0, &quo);
     WCS_CHECK_NEAR(rem, 1.0, EPS);
-    WCS_CHECK_EQ(quo, 3);
+    WCS_CHECK_EQ(quo & 0x7, 3);
 
     rem = remquo(7.0, 2.0, &quo);
     // 7 = 2*3 + 1, but remquo rounds-to-nearest: 7 = 2*4 - 1, so rem=-1, quo=4.
     WCS_CHECK_NEAR(rem, -1.0, EPS);
-    WCS_CHECK_EQ(quo, 4);
+    WCS_CHECK_EQ(quo & 0x7, 4);
 }

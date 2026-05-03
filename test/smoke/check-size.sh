@@ -15,6 +15,12 @@ set -euo pipefail
 WASM_FILE="${1:?usage: $0 <wasm-file> <max-bytes>}"
 MAX_BYTES="${2:?usage: $0 <wasm-file> <max-bytes>}"
 
+if [ ! -f "${WASM_FILE}" ]; then
+    echo "size-budget: FAIL — file does not exist: ${WASM_FILE}"
+    echo "Did the build target produce it? Re-run cmake --build ..."
+    exit 1
+fi
+
 # Portable byte count (avoids stat(1)'s incompatible flags between Linux + macOS).
 actual=$(wc -c < "${WASM_FILE}" | tr -d ' ')
 
