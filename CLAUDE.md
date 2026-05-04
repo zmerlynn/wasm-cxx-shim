@@ -352,9 +352,8 @@ them.
 - **`CMAKE_CURRENT_LIST_DIR` inside a function body resolves to the
   *caller's* location, not the module's.** When writing a CMake
   helper module that needs to find files it ships alongside (e.g.,
-  `WasmCxxShimManifold.cmake` resolving its sibling
-  `manifold-patches/` directory), capture the path at module
-  load-time, OUTSIDE any function:
+  shipped data, vendored patches, generated configs), capture the
+  path at module load-time, OUTSIDE any function:
   ```cmake
   # at module top-level
   set(_helper_dir "${CMAKE_CURRENT_LIST_DIR}")

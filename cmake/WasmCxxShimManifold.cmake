@@ -3,8 +3,8 @@
 # Helper for consumers building manifold (elalish/manifold) on top of
 # wasm-cxx-shim for the wasm32-unknown-unknown target. Captures the
 # high-change-rate parts of the integration cocktail (FetchContent
-# pin, the iostream-stripping carry-patch, manifold's CMake options)
-# that drift fast across manifold versions. Lower-change-rate parts
+# pin, manifold's CMake options) that drift fast across manifold
+# versions. Lower-change-rate parts
 # (the libc++ `__config_site` override, the `<mutex>` stub header,
 # and `libcxx-extras.cpp`) stay scoped under the shim's
 # `test/manifold-link/` for libc++-source-drift insulation reasons
@@ -24,8 +24,7 @@
 #
 #     wasm_cxx_shim_add_manifold(
 #         MANIFOLD_GIT_TAG       <ref>      # tag or SHA; default = shim's tested pin
-#         EXTRA_MANIFOLD_PATCHES <p>...     # additional patches to apply
-#         SKIP_BUILTIN_PATCHES              # opt out of the shipped #1690 carry-patch
+#         EXTRA_MANIFOLD_PATCHES <p>...     # caller-supplied patches to apply
 #     )
 #
 # After the call, the `manifold`, `manifoldc`, and `Clipper2` CMake
@@ -49,35 +48,26 @@
 #
 # ---
 #
-# The shipped carry-patch is the verbatim diff of elalish/manifold#1690
-# (adds `MANIFOLD_NO_IOSTREAM` build option + Clipper2 tracking patch)
-# against the upstream master commit pinned below. Once #1690 lands and
-# the pin moves past it, the patch drops entirely. Until then, this
-# helper bakes #1690's design into the shim — manifold's option chain
-# does the work, the shim just sets the option ON and lets manifold
-# propagate `MANIFOLD_NO_IOSTREAM` / `MANIFOLD_NO_FILESYSTEM` /
-# `CLIPPER2_NO_IOSTREAM` as PUBLIC compile defs.
+# Manifold's `MANIFOLD_NO_IOSTREAM` option (added upstream in #1690)
+# does the work: defining it ON propagates `MANIFOLD_NO_IOSTREAM` /
+# `MANIFOLD_NO_FILESYSTEM` / `CLIPPER2_NO_IOSTREAM` as PUBLIC compile
+# defs through manifold's and Clipper2's targets. The shim just sets
+# the option ON. No carry-patches are shipped for default-pin builds.
 
 include_guard(GLOBAL)
-
-# Resolve our own location so the helper finds its shipped patch
-# regardless of whether it's loaded from the source tree or from an
-# installed package config dir.
-set(_wasm_cxx_shim_manifold_helper_dir "${CMAKE_CURRENT_LIST_DIR}")
 
 # Tested-pin default. Bumped when the shim cuts a new release that
 # verifies a new manifold combination. Source of truth: this file.
 # Changes here must be paired with a CHANGELOG.md entry + a version
-# bump (and re-rolling the carry-patch if upstream master moved
-# beneath #1690's diff context).
+# bump.
 set(_wasm_cxx_shim_manifold_default_manifold_tag
-    "5f95a3ac0e906f596bb2d27a52d005ef60de58f3"
+    "3ce9622b"
     CACHE STRING
     "Default manifold pin used by wasm_cxx_shim_add_manifold()")
 
 function(wasm_cxx_shim_add_manifold)
     cmake_parse_arguments(_WCSAM
-        "SKIP_BUILTIN_PATCHES"
+        ""
         "MANIFOLD_GIT_TAG"
         "EXTRA_MANIFOLD_PATCHES"
         ${ARGN})
@@ -91,31 +81,21 @@ function(wasm_cxx_shim_add_manifold)
         set(_WCSAM_MANIFOLD_GIT_TAG "${_wasm_cxx_shim_manifold_default_manifold_tag}")
     endif()
 
-    # Builtin patch (the vendored #1690 diff) plus user extras.
-    set(_manifold_patches "")
-    if(NOT _WCSAM_SKIP_BUILTIN_PATCHES)
-        list(APPEND _manifold_patches
-            "${_wasm_cxx_shim_manifold_helper_dir}/manifold-patches/0001-manifold-no-iostream.patch")
-    endif()
-    list(APPEND _manifold_patches ${_WCSAM_EXTRA_MANIFOLD_PATCHES})
-
     include(FetchContent)
 
-    # Manifold owns its Clipper2 declaration (manifoldDeps.cmake).
-    # With the #1690 carry-patch applied, that declaration also
-    # carries a Clipper2 carry-patch tracking AngusJohnson/Clipper2#1094,
-    # and sets CLIPPER2_NO_IOSTREAM=ON when MANIFOLD_NO_IOSTREAM is on.
-    # We don't pre-declare Clipper2 here.
+    # Manifold owns its Clipper2 declaration (manifoldDeps.cmake) and
+    # propagates CLIPPER2_NO_IOSTREAM=ON to the bundled Clipper2 when
+    # MANIFOLD_NO_IOSTREAM is on. We don't pre-declare Clipper2 here.
     set(_manifold_decl_args
         GIT_REPOSITORY https://github.com/elalish/manifold.git
         GIT_TAG        ${_WCSAM_MANIFOLD_GIT_TAG}
         UPDATE_DISCONNECTED TRUE)
-    if(_manifold_patches)
+    if(_WCSAM_EXTRA_MANIFOLD_PATCHES)
         # `git apply` flag set matches manifold-csg's proven recipe:
         # --ignore-whitespace + --whitespace=nowarn for cross-platform
         # robustness (CRLF, mixed indentation).
         list(APPEND _manifold_decl_args
-            PATCH_COMMAND git apply --ignore-whitespace --whitespace=nowarn ${_manifold_patches})
+            PATCH_COMMAND git apply --ignore-whitespace --whitespace=nowarn ${_WCSAM_EXTRA_MANIFOLD_PATCHES})
     endif()
     FetchContent_Declare(manifold ${_manifold_decl_args})
 

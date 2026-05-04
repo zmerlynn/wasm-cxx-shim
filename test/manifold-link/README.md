@@ -41,23 +41,17 @@ Each shim release verifies a specific manifold pin in CI; see
 `CHANGELOG.md`'s "Tested upstream combinations" table for the
 mapping.
 
-## Carry-patch
+## Carry-patches
 
-Lives under [`cmake/manifold-patches/`](../../cmake/manifold-patches/)
-(canonical location — alongside the `wasm_cxx_shim_add_manifold()`
-helper that applies it via FetchContent's `PATCH_COMMAND`):
+None at v0.4.0+. Manifold's `MANIFOLD_NO_IOSTREAM` build option is
+now upstream
+([elalish/manifold#1690](https://github.com/elalish/manifold/pull/1690),
+merged 2026-05-04). The helper sets the option ON; manifold owns the
+rest, including the bundled Clipper2 carry-patch that mirrors
+[AngusJohnson/Clipper2#1094](https://github.com/AngusJohnson/Clipper2/pull/1094).
 
-- **`0001-manifold-no-iostream.patch`** — verbatim vendored diff of
-  [elalish/manifold#1690](https://github.com/elalish/manifold/pull/1690)
-  against the pinned manifold commit. Adds a `MANIFOLD_NO_IOSTREAM`
-  build option that strips iostream- and filesystem-using bits from
-  manifold's public API and tests, and propagates the matching
-  `CLIPPER2_NO_IOSTREAM` macro to the bundled Clipper2 (via a tracking
-  patch for [AngusJohnson/Clipper2#1094](https://github.com/AngusJohnson/Clipper2/pull/1094)
-  shipped inside #1690 itself).
-
-Once #1690 lands and the shim's manifold pin moves past the merge,
-this carry-patch drops entirely.
+Callers can still pass `EXTRA_MANIFOLD_PATCHES` to apply their own
+patches against the pinned manifold checkout if needed.
 
 ## Stub headers
 
@@ -92,10 +86,11 @@ What it took to get green:
    before user `-isystem` paths, which was breaking libc++'s
    `<cstddef>` → `<stddef.h>` resolution chain. Broadly useful — not
    manifold-specific.
-3. **The vendored #1690 carry-patch** described above — gives manifold
-   a `MANIFOLD_NO_IOSTREAM` build option that propagates through to
-   `MANIFOLD_NO_FILESYSTEM` and `CLIPPER2_NO_IOSTREAM`, stripping
-   stream- and filesystem-using bits from the public API + tests.
+3. **`MANIFOLD_NO_IOSTREAM=ON`** — manifold's native build option
+   (added in elalish/manifold#1690, merged 2026-05-04) propagates
+   through to `MANIFOLD_NO_FILESYSTEM` and `CLIPPER2_NO_IOSTREAM`,
+   stripping stream- and filesystem-using bits from the public API
+   + tests.
 4. **Stub `include/mutex`** — no-op `std::mutex`/`recursive_mutex`/
    `lock_guard`/`scoped_lock`/`unique_lock` because libc++ gates
    these behind `_LIBCPP_HAS_THREADS`.
@@ -112,14 +107,15 @@ What it took to get green:
    — defaults are ON and pull in `<sys/types.h>`, googletest, etc.
    we don't ship.
 
-## Upstream PR roadmap
+## Upstream PR status
 
-The single carry-patch is the verbatim diff of
-[elalish/manifold#1690](https://github.com/elalish/manifold/pull/1690),
-which itself contains a tracking patch for
-[AngusJohnson/Clipper2#1094](https://github.com/AngusJohnson/Clipper2/pull/1094).
-Once #1690 lands the patch drops and the shim just bumps the manifold
-pin past the merge.
+[elalish/manifold#1690](https://github.com/elalish/manifold/pull/1690)
+landed 2026-05-04 — the carry-patch dropped at v0.4.0. A bundled
+Clipper2 tracking patch for
+[AngusJohnson/Clipper2#1094](https://github.com/AngusJohnson/Clipper2/pull/1094)
+travels with the manifold pin (manifold owns it via its
+`manifoldDeps.cmake` carry-patch). Drops once Clipper2 takes #1094
+and manifold's pin moves past it.
 
 ## Opt-in build
 

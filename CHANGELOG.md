@@ -15,6 +15,7 @@ combination in CI:
 
 | Shim version          | manifold                                      | Clipper2                                     | Patches shipped       |
 |-----------------------|-----------------------------------------------|----------------------------------------------|-----------------------|
+| v0.4.0                | `3ce9622b` (master, includes elalish/manifold#1690) | inherits manifold's pin (manifold owns the FetchContent_Declare) | 0                     |
 | v0.4.0-alpha.1        | `5f95a3ac` (master + vendored elalish/manifold#1690) | inherits manifold's pin (manifold owns the FetchContent_Declare) | 1 (verbatim diff of #1690) |
 | v0.3.0                | `v3.4.1`                                      | `46f639177fe418f9689e8ddb74f08a870c71f5b4`   | 0001 + 0002 + 0003    |
 | v0.2.0                | `v3.4.1`                                      | `46f639177fe418f9689e8ddb74f08a870c71f5b4`   | 0001 + 0002 + 0003 (carried in `test/manifold-link/patches/`; helper not yet present) |
@@ -22,7 +23,7 @@ combination in CI:
 Consumers calling `wasm_cxx_shim_add_manifold()` (introduced in v0.3.0)
 with no arguments get the row matching their installed shim version.
 Pinning to other refs is supported via `MANIFOLD_GIT_TAG` /
-`CLIPPER2_GIT_TAG` / `EXTRA_*_PATCHES` parameters; see
+`EXTRA_MANIFOLD_PATCHES` parameters; see
 `cmake/WasmCxxShimManifold.cmake`.
 
 When upstream PRs land for the carry-patches, the corresponding patch
@@ -33,7 +34,36 @@ version where the macro guard appears natively.
 
 ## Unreleased
 
-(no changes since v0.4.0-alpha.1)
+(no changes since v0.4.0)
+
+## v0.4.0 — manifold #1690 merged upstream, carry-patch dropped (2026-05-04)
+
+Manifold's `MANIFOLD_NO_IOSTREAM` build option is now upstream
+(merged in [elalish/manifold#1690][pr1690]). The shim drops its
+single carry-patch entirely and bumps the manifold pin to a master
+commit past the merge. From here, the helper is just a thin wrapper
+that sets `MANIFOLD_NO_IOSTREAM=ON` and lets manifold's own option
+chain propagate the macros.
+
+[pr1690]: https://github.com/elalish/manifold/pull/1690
+
+### Removed
+
+- `cmake/manifold-patches/0001-manifold-no-iostream.patch` and the
+  whole `cmake/manifold-patches/` directory. The vendored #1690 diff
+  is no longer needed; manifold owns the option upstream.
+- `SKIP_BUILTIN_PATCHES` argument from
+  `wasm_cxx_shim_add_manifold()`. There are no builtin patches to
+  skip. Callers that were passing it can drop the argument; callers
+  using `EXTRA_MANIFOLD_PATCHES` continue to work unchanged.
+- The `install(DIRECTORY .../manifold-patches ...)` rule (the
+  directory no longer exists).
+
+### Changed
+
+- Default `MANIFOLD_GIT_TAG` bumped to `3ce9622b` (upstream master
+  HEAD at release time, includes #1690 + one downstream commit).
+- Helper smoke test updated for the new file layout.
 
 ## v0.4.0-alpha.1 — manifold pin bump + #1690 carry-patch (2026-05-03)
 

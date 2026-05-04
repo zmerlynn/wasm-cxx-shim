@@ -100,16 +100,14 @@ Things that may need extending when you do:
   headers our libcxx subset doesn't ship. Adding such a test means
   either patching the test source or extending the libcxx subset.
 
-## Carry-patch dependency
+## Iostream/filesystem stripping
 
-This directory inherits the carry-patch applied at the
-`test/manifold-link/` level via the shared
-`FetchContent_Declare(manifold ...)` call. The single carry-patch
-(`cmake/manifold-patches/0001-manifold-no-iostream.patch`) provides
-manifold's `MANIFOLD_NO_IOSTREAM` build option, which transitively
-strips iostream/filesystem-using bits from manifold's library code,
-its `test/test_main.cpp` fixture helpers, and the bundled Clipper2
-headers. Documented in `test/manifold-link/README.md`.
+This directory's tests build with `MANIFOLD_NO_IOSTREAM=ON` (set by
+the helper, native upstream option as of manifold#1690). That
+transitively strips iostream/filesystem-using bits from manifold's
+library code, its `test/test_main.cpp` fixture helpers, and the
+bundled Clipper2 headers. No carry-patches needed at v0.4.0+;
+documented further in `test/manifold-link/README.md`.
 
 ## Build & run
 

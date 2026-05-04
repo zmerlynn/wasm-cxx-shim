@@ -120,14 +120,6 @@ install(FILES
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/wasm-cxx-shim
 )
 
-# Integration-helper patches. Installed alongside the helper module
-# so that wasm_cxx_shim_add_manifold()'s ${CMAKE_CURRENT_LIST_DIR}/
-# manifold-patches/ resolution works uniformly in source + install
-# trees.
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake/manifold-patches
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/wasm-cxx-shim
-)
-
 # Install the toolchain file as a convenience for downstream consumers
 # building C++ libraries against this shim. They pass it as
 # `-DCMAKE_TOOLCHAIN_FILE=${prefix}/share/wasm-cxx-shim/toolchain-wasm32.cmake`.
