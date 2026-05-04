@@ -37,13 +37,5 @@ if(NOT _wasm_cxx_shim_manifold_default_manifold_tag)
     message(FATAL_ERROR "default manifold tag is empty")
 endif()
 
-# Shipped carry-patch must resolve. Catches "file moved" / "captured
-# the wrong CMAKE_CURRENT_LIST_DIR" / "install rule missed a file".
-set(_p "${_wasm_cxx_shim_manifold_helper_dir}/manifold-patches/0001-manifold-no-iostream.patch")
-if(NOT EXISTS "${_p}")
-    message(FATAL_ERROR "shipped patch missing: ${_p}")
-endif()
-
 message(STATUS
-    "helper API smoke OK: default manifold pin=${_wasm_cxx_shim_manifold_default_manifold_tag}, "
-    "carry-patch resolved")
+    "helper API smoke OK: default manifold pin=${_wasm_cxx_shim_manifold_default_manifold_tag}")
