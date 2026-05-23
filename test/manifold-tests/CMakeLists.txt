@@ -159,12 +159,12 @@ if(WASM_OBJDUMP_EXECUTABLE)
     )
 endif()
 
-# Size budget. Current: ~1.07 MB (boolean + boolean_complex +
-# cross_section + manifoldc + sdf + smooth, after the bump-manifold to
-# the in-flight #1690 carry-patch). Budget 1.4 MB gives ~30% headroom
-# for adding 1-2 more test files of similar shape without immediate
-# breakage. Bigger jumps (e.g., adding manifold_test.cpp once
-# <set>/<thread> deps are sorted) bump this with a why-line.
+# Size budget. Current: ~1.16 MB (boolean + boolean_complex +
+# cross_section + manifoldc + sdf + smooth, at the v3.5.0 pin).
+# Budget 1.4 MB gives ~20% headroom for adding 1-2 more test files
+# of similar shape without immediate breakage. Bigger jumps (e.g.,
+# adding manifold_test.cpp once <set>/<thread> deps are sorted)
+# bump this with a why-line.
 add_test(NAME manifold_tests_size_budget
     COMMAND bash ${CMAKE_SOURCE_DIR}/test/smoke/check-size.sh
         ${_tests_wasm}

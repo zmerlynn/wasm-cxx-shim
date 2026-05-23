@@ -55,13 +55,26 @@ patches against the pinned manifold checkout if needed.
 
 ## Stub headers
 
-`include/mutex` — no-op `std::mutex` / `std::recursive_mutex` /
-`std::lock_guard` / `std::scoped_lock` / `std::unique_lock`. Needed
-because libc++ gates these behind `_LIBCPP_HAS_THREADS` (which we
-turn off in the smoke test's `__config_site`), but manifold's
-`utils.h` and `impl.h` still reference them. Stubbing is smaller
-than patching manifold to ifdef the mutex usage. With threads off,
-all mutex operations are trivially correct as no-ops.
+Both live in `include/` and shadow libc++ via the -isystem chain.
+Each addresses a header path that libc++ gates behind
+`#if _LIBCPP_HAS_THREADS` (which the shim's `__config_site` sets to
+0), but which manifold's source still references unconditionally.
+With threads off, the stubbed operations are trivially correct.
+
+- `include/mutex` — no-op `std::mutex` / `std::recursive_mutex` /
+  `std::lock_guard` / `std::scoped_lock` / `std::unique_lock`.
+  Referenced by manifold's `utils.h` and `impl.h`. Stub locks are
+  no-ops (single-threaded code can't race).
+- `include/memory` — `#include_next <memory>` plus stubs for the
+  `std::atomic_load/store/exchange/is_lock_free(shared_ptr*)` free
+  function family. Used by manifold v3.5.0+ for the
+  `ExecutionContext` attached to `Manifold` via
+  `std::shared_ptr<ExecutionContext> ctx_`. Stub versions are
+  no-op-with-direct-copy.
+
+Upstream-friendly fix for both: a `MANIFOLD_NO_THREADS` build flag
+that gates the mutex/atomic-shared_ptr usage out. Until that lands,
+stubs.
 
 ## Status — green
 
