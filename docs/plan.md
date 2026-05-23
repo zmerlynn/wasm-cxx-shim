@@ -332,16 +332,23 @@ Status:
 - **Phase 7-A — DONE**. `manifold-csg` (Rust bindings to manifold)
   builds + runs on `wasm32-unknown-unknown` against the shim,
   unblocking `wasm-bindgen` consumers.
-- **Phase 7 follow-up — IN-FLIGHT (PR #13, v0.4.0-alpha.1)**. Bumped
-  the manifold pin to upstream master and consolidated the three
-  iostream patches into a single vendored diff of
+- **Phase 7 follow-up — DONE (PRs #13/#14, v0.4.0-alpha.1 + v0.4.0)**.
+  Bumped the manifold pin to upstream master and consolidated the
+  three iostream patches into a single vendored diff of
   [elalish/manifold#1690](https://github.com/elalish/manifold/pull/1690)
   (the upstream PR adding `MANIFOLD_NO_IOSTREAM` natively). Helper
   refactor: drops the Clipper2 pre-declare (manifold owns it now)
   and lets manifold's option chain propagate the macros as PUBLIC
-  compile defs. Test coverage 71 → 121. Pre-release while #1690 is
-  in upstream review; once it merges and the pin moves past it, the
-  carry-patch drops entirely and v0.4.0 (non-alpha) ships.
+  compile defs. Shipped as v0.4.0-alpha.1 (with vendored carry-patch);
+  once #1690 merged upstream the carry-patch dropped and v0.4.0
+  (non-alpha) shipped. Test coverage 71 → 121 at v0.4.0.
+- **Phase 7 catch-up — IN-FLIGHT (PR #15, v0.5.0)**. Manifold v3.5.0
+  catch-up. Two new symbol gaps closed in the shim itself (no
+  carry-patches reintroduced): `libc/include/assert.h` for `<cassert>`
+  consumers, and `test/manifold-link/include/memory` extending libc++
+  with stubs for the `std::atomic_*(shared_ptr*)` free function family
+  (libc++ gates them behind `_LIBCPP_HAS_THREADS`). Test count 121 →
+  120 due to one upstream test removal (`Smooth.SineSurface`).
 
 CI integration (running 7-B1/7-B2 jobs in CI) is a follow-up PR after
 the merges; the local ctest is green but the heavyweight build

@@ -15,6 +15,7 @@ combination in CI:
 
 | Shim version          | manifold                                      | Clipper2                                     | Patches shipped       |
 |-----------------------|-----------------------------------------------|----------------------------------------------|-----------------------|
+| v0.5.0                | `v3.5.0`                                      | inherits manifold's pin                      | 0                     |
 | v0.4.0                | `3ce9622b` (master, includes elalish/manifold#1690) | inherits manifold's pin (manifold owns the FetchContent_Declare) | 0                     |
 | v0.4.0-alpha.1        | `5f95a3ac` (master + vendored elalish/manifold#1690) | inherits manifold's pin (manifold owns the FetchContent_Declare) | 1 (verbatim diff of #1690) |
 | v0.3.0                | `v3.4.1`                                      | `46f639177fe418f9689e8ddb74f08a870c71f5b4`   | 0001 + 0002 + 0003    |
@@ -34,7 +35,55 @@ version where the macro guard appears natively.
 
 ## Unreleased
 
-(no changes since v0.4.0)
+(no changes since v0.5.0)
+
+## v0.5.0 — manifold v3.5.0 catch-up (2026-05-23)
+
+Bumps the manifold pin to `v3.5.0` (the upstream release, 20 commits
+past v0.4.0's pin). Two symbol gaps surfaced and were closed; no
+carry-patches were reintroduced.
+
+### Added
+
+- `libc/include/assert.h` — minimal freestanding implementation
+  (`__builtin_trap()` on failure, `static_assert` → `_Static_assert`
+  for C). Surfaced by manifold v3.5.0's new `disjoint_sets.h` which
+  includes `<cassert>`; libc++'s `<cassert>` falls through to
+  `<assert.h>` via `__has_include`, and the shim previously didn't
+  ship one. Generally useful — not manifold-specific.
+- `test/manifold-link/include/memory` — `#include_next <memory>` +
+  stubs for the `std::atomic_load/store/exchange/is_lock_free(shared_ptr*)`
+  free function family. libc++ gates these behind
+  `#if _LIBCPP_HAS_THREADS` (which `__config_site` sets to 0).
+  Manifold v3.5.0 attaches `ExecutionContext` to `Manifold` via
+  `std::shared_ptr<ExecutionContext> ctx_` and accesses it with
+  these atomic-for-shared_ptr free functions; without the stubs,
+  the compile fails with "no matching function for call to
+  atomic_load". Same pattern as the existing `<mutex>` stub:
+  single-threaded freestanding code is correct without atomicity.
+
+### Changed
+
+- Default `MANIFOLD_GIT_TAG` bumped from `3ce9622b` to `v3.5.0`.
+- Inner manifold-tests count: 121 → 120. The dropped test is
+  `Smooth.SineSurface`, removed upstream in v3.5.0
+  (`git diff 3ce9622b..v3.5.0 -- test/smooth_test.cpp`). Not
+  consumer-facing churn.
+- `manifold-tests.wasm` size: 1.07 MB → 1.16 MB (still under the
+  1.40 MB budget; growth is the new ExecutionContext infrastructure).
+- `manifold-link-probe.wasm` size: 339 KB → 391 KB (under the
+  450 KB budget; same cause).
+
+### Notes for downstream consumers
+
+- Callers using `wasm_cxx_shim_add_manifold()` with defaults will be
+  on `v3.5.0` automatically. Override with `MANIFOLD_GIT_TAG <ref>`
+  if you need to stay on a v3.4.x pin.
+- The `<memory>` stub at `test/manifold-link/include/memory` is
+  consumer-copyable (alongside the existing `<mutex>` stub) for
+  out-of-tree integrations. The upstream-friendly fix is a
+  `MANIFOLD_NO_THREADS` flag on manifold that gates the
+  atomic_*(&ctx_) usage; until then, the stub.
 
 ## v0.4.0 — manifold #1690 merged upstream, carry-patch dropped (2026-05-04)
 

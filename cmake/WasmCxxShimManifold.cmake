@@ -61,7 +61,7 @@ include_guard(GLOBAL)
 # Changes here must be paired with a CHANGELOG.md entry + a version
 # bump.
 set(_wasm_cxx_shim_manifold_default_manifold_tag
-    "3ce9622b"
+    "v3.5.0"
     CACHE STRING
     "Default manifold pin used by wasm_cxx_shim_add_manifold()")
 
