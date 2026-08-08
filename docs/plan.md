@@ -342,18 +342,26 @@ Status:
   compile defs. Shipped as v0.4.0-alpha.1 (with vendored carry-patch);
   once #1690 merged upstream the carry-patch dropped and v0.4.0
   (non-alpha) shipped. Test coverage 71 → 121 at v0.4.0.
-- **Phase 7 catch-up — IN-FLIGHT (PR #15, v0.5.0)**. Manifold v3.5.0
+- **Phase 7 catch-up — DONE (PR #15, v0.5.0)**. Manifold v3.5.0
   catch-up. Two new symbol gaps closed in the shim itself (no
   carry-patches reintroduced): `libc/include/assert.h` for `<cassert>`
   consumers, and `test/manifold-link/include/memory` extending libc++
   with stubs for the `std::atomic_*(shared_ptr*)` free function family
   (libc++ gates them behind `_LIBCPP_HAS_THREADS`). Test count 121 →
   120 due to one upstream test removal (`Smooth.SineSurface`).
+- **Phase 7 catch-up — DONE (PR #16)**. Manifold v3.5.2 pin bump.
+  No shim source changes: v3.5.0's `ExecutionContext` groundwork
+  already covered the symbol surface the two upstream patch releases
+  build on. Test count 120 → 121 (`CBIND.execution_context_factories`;
+  the two new `Boolean.Concurrent*` tests are `#if MANIFOLD_PAR == 1`
+  and don't apply to the serial build). Upstream's new
+  `test/context_test.cpp` stays off the list — see the skip note in
+  `test/manifold-tests/CMakeLists.txt`.
 
-CI integration (running 7-B1/7-B2 jobs in CI) is a follow-up PR after
-the merges; the local ctest is green but the heavyweight build
-(manifold+Clipper2 fetch+compile, ~5 min/cell) is only opted-in
-locally for now.
+The heavyweight 7-B1/7-B2 jobs run in CI behind the `manifold` job
+(`-DWASM_CXX_SHIM_BUILD_MANIFOLD_LINK=ON`), separate from the fast
+`build` job so a ~5 min/cell manifold+Clipper2 fetch+compile doesn't
+gate the core matrix.
 
 ## File-tree shape after v0.1
 

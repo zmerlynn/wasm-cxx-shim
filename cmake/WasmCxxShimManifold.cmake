@@ -56,12 +56,13 @@
 
 include_guard(GLOBAL)
 
-# Tested-pin default. Bumped when the shim cuts a new release that
-# verifies a new manifold combination. Source of truth: this file.
-# Changes here must be paired with a CHANGELOG.md entry + a version
-# bump.
+# Tested-pin default. Bumped when CI verifies a new manifold
+# combination. Source of truth: this file. Changes here must be paired
+# with a CHANGELOG.md entry. A version bump goes with it only when the
+# shim's own components changed — a pin move that needs no shim-side
+# work rides along in the next release.
 set(_wasm_cxx_shim_manifold_default_manifold_tag
-    "v3.5.0"
+    "v3.5.2"
     CACHE STRING
     "Default manifold pin used by wasm_cxx_shim_add_manifold()")
 

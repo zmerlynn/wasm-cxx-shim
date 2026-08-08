@@ -80,7 +80,8 @@ jobs:
           retention-days: 90
           if-no-files-found: error
 
-  # Heavyweight job: link manifold v3.4.1 against the shim and run its
+  # Heavyweight job: link manifold (at the shim's tested pin, see
+  # cmake/WasmCxxShimManifold.cmake) against the shim and run its
   # GoogleTest-based boolean tests via the wasm-test-harness. Multi-minute
   # FetchContent + build per cell, so it lives in its own job — the main
   # `build` job stays fast and its status is independent of this one.
