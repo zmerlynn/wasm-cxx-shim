@@ -5,7 +5,7 @@ the shim. Validates end-to-end correctness of the full stack
 (libc + libm + libcxx + libcxx-extras + manifold + Clipper2) via a
 real consumer's tests, not just a probe.
 
-Currently runs six test files from upstream manifold — **120/120
+Currently runs six test files from upstream manifold — **121/121
 tests pass**:
 
 | File | Surface |
@@ -126,7 +126,7 @@ node tools/wasm-test-harness/run.mjs \
     build/wasm32/test/manifold-tests/manifold-tests.wasm
 ```
 
-Expected output ends with: `wasm-test-harness: 120 passed, 0 failed, 120 total`.
+Expected output ends with: `wasm-test-harness: 121 passed, 0 failed, 121 total`.
 
 ## Why this exists
 

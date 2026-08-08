@@ -88,14 +88,15 @@ target_link_libraries(my-wasm PRIVATE
     my-libcxx-extras)  # consumer-provided; see test/manifold-link/
 ```
 
-The helper does FetchContent for both projects, applies the three
-carry-patches (`MANIFOLD_NO_IOSTREAM` / `MANIFOLD_NO_FILESYSTEM` /
-`CLIPPER2_NO_IOSTREAM`), and flips manifold + Clipper2's CMake options
-to disable the bits the shim doesn't support (Python/JS bindings,
-threading, googletest pulls, etc.). The tested-pin combination for
-each shim release is documented in [`CHANGELOG.md`](CHANGELOG.md);
-overrides for arbitrary refs + custom patch sets are supported via
-the helper's named arguments — see
+The helper does FetchContent for manifold (which declares Clipper2
+itself), sets `MANIFOLD_NO_IOSTREAM=ON` so manifold propagates
+`MANIFOLD_NO_FILESYSTEM` / `CLIPPER2_NO_IOSTREAM` down to both
+targets, and flips manifold + Clipper2's CMake options to disable the
+bits the shim doesn't support (Python/JS bindings, threading,
+googletest pulls, etc.). No carry-patches are needed at the default
+pin. The tested-pin combination for each shim release is documented
+in [`CHANGELOG.md`](CHANGELOG.md); overrides for arbitrary refs +
+custom patch sets are supported via the helper's named arguments — see
 [`cmake/WasmCxxShimManifold.cmake`](cmake/WasmCxxShimManifold.cmake)
 for the full API.
 

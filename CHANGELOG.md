@@ -15,7 +15,8 @@ combination in CI:
 
 | Shim version          | manifold                                      | Clipper2                                     | Patches shipped       |
 |-----------------------|-----------------------------------------------|----------------------------------------------|-----------------------|
-| v0.5.0                | `v3.5.0`                                      | inherits manifold's pin                      | 0                     |
+| unreleased (`main`)   | `v3.5.2`                                      | inherits manifold's pin                      | 0                     |
+| v0.5.0                | `v3.5.0` (also verified against `v3.5.2`)     | inherits manifold's pin                      | 0                     |
 | v0.4.0                | `3ce9622b` (master, includes elalish/manifold#1690) | inherits manifold's pin (manifold owns the FetchContent_Declare) | 0                     |
 | v0.4.0-alpha.1        | `5f95a3ac` (master + vendored elalish/manifold#1690) | inherits manifold's pin (manifold owns the FetchContent_Declare) | 1 (verbatim diff of #1690) |
 | v0.3.0                | `v3.4.1`                                      | `46f639177fe418f9689e8ddb74f08a870c71f5b4`   | 0001 + 0002 + 0003    |
@@ -35,7 +36,35 @@ version where the macro guard appears natively.
 
 ## Unreleased
 
-(no changes since v0.5.0)
+### Changed
+
+- Default `MANIFOLD_GIT_TAG` bumped from `v3.5.0` to `v3.5.2`. No
+  version bump: `libc`, `libm`, and `libcxx` are untouched, so v0.5.0
+  as tagged also builds against `v3.5.2` — point `MANIFOLD_GIT_TAG` at
+  it and you get the same result. v3.5.0's `ExecutionContext`
+  groundwork (the `assert.h` and atomic-`shared_ptr` gaps closed in
+  v0.5.0) already covered the symbol surface the two upstream patch
+  releases build on — nothing new was missing.
+- Inner manifold-tests count: 120 → 121. The addition is
+  `CBIND.execution_context_factories`, covering the new
+  `manifold_execution_context_{of_meshgl,level_set,smooth}` C entry
+  points. Upstream also added
+  `Boolean.ConcurrentSharedNodeOriginalIDStable` and
+  `Boolean.ConcurrentSharedOpNodeOriginalIDStable`, both inside
+  `#if MANIFOLD_PAR == 1` and so absent from the serial build.
+- `manifold-tests.wasm` and `manifold-link-probe.wasm` sizes are flat
+  (1.16 MB / 392 KB); both budgets unchanged.
+- Doc-staleness sweep: README's helper description still described the
+  three carry-patches dropped back in v0.4.0, and `docs/plan.md` still
+  had the v0.5.0 phase marked in-flight.
+
+### Notes for downstream consumers
+
+- Upstream's new `test/context_test.cpp` (56 tests, most of them
+  `MANIFOLD_PAR == 1`-gated) is not in the inner test list: it
+  includes `<thread>` and `<chrono>` at file scope, neither of which
+  the libcxx subset ships. Adding it means two more stub headers for
+  a handful of serial-build tests.
 
 ## v0.5.0 — manifold v3.5.0 catch-up (2026-05-23)
 

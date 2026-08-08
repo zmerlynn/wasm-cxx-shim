@@ -1,9 +1,9 @@
 # test/manifold-tests — manifold's GoogleTest-based test suite, running
 # on wasm32-unknown-unknown via the wasm-test-harness.
 #
-# First proof-point: a single test file (test/boolean_test.cpp from
-# manifold v3.4.1) plus manifold's own test/test_main.cpp (which
-# defines `Options options;` and the helpers like ExpectMeshes /
+# First proof-point: a single test file (test/boolean_test.cpp) plus
+# manifold's own test/test_main.cpp (which defines `Options options;`
+# and the helpers like ExpectMeshes /
 # RelatedGL / CheckGL that consumer test files call). Both are
 # compiled against our gtest-shim adapter, linked against manifold +
 # Clipper2 + the shim, and run via Node. ASSERTs and EXPECTs in the
@@ -55,6 +55,10 @@ set(_manifold_test_files
 #     RegisterPolygonTests, which loads from the polygons/ corpus
 #     directory and is no-op'd under MANIFOLD_NO_IOSTREAM — file would
 #     compile but contribute zero tests.
+#   * context_test.cpp — includes <thread> and <chrono> at file scope,
+#     neither of which our libcxx subset ships. Most of its TESTs are
+#     `#if MANIFOLD_PAR == 1` anyway, so the serial-build yield is
+#     small relative to the two stub headers it would cost.
 
 # Each test source compiles with:
 #   * gtest-shim BEFORE real GoogleTest's include path so
@@ -160,7 +164,7 @@ if(WASM_OBJDUMP_EXECUTABLE)
 endif()
 
 # Size budget. Current: ~1.16 MB (boolean + boolean_complex +
-# cross_section + manifoldc + sdf + smooth, at the v3.5.0 pin).
+# cross_section + manifoldc + sdf + smooth, at the v3.5.2 pin).
 # Budget 1.4 MB gives ~20% headroom for adding 1-2 more test files
 # of similar shape without immediate breakage. Bigger jumps (e.g.,
 # adding manifold_test.cpp once <set>/<thread> deps are sorted)
