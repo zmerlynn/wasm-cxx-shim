@@ -16,7 +16,7 @@ experiment, see [`docs/context.md`](../docs/context.md)):
 - **specialized**: `remquo`, `round`
 
 Plus workhorses needed transitively or commonly:
-- `atan`, `ceil`, `copysign`, `exp`, `fabs`, `floor`, `ldexp`, `log`,
+- `atan`, `ceil`, `copysign`, `exp`, `fabs`, `floor`, `fmod`, `frexp`, `ldexp`, `log`,
   `scalbn`, `sqrt`, `tan`, `trunc`
 
 All double-precision. Single-precision (`*f`) variants are added on
@@ -61,11 +61,11 @@ All math sources vendored from
 [WebAssembly/wasi-libc](https://github.com/WebAssembly/wasi-libc), tree
 `libc-top-half/musl/`. wasi-libc's musl tree is musl-with-wasm-tweaks
 already applied — most importantly, alternate-rounding paths gated out
-of `__rem_pio2.c`. Of our 42 closure `.c` files, only `__rem_pio2.c`
-diverges from upstream musl; the other 41 are byte-identical.
+of `__rem_pio2.c`. Of our 44 closure `.c` files, only `__rem_pio2.c`
+diverges from upstream musl; the other 43 are byte-identical.
 
 Vendored layout:
-- `src/musl/` — 42 `.c` files + 5 `*_data.h` data tables
+- `src/musl/` — 44 `.c` files + 5 `*_data.h` data tables
 - `src/internal/libm.h`, `src/internal/atomic.h` — from
   `musl/src/internal/`
 - `src/internal/atomic_arch.h`, `src/internal/fp_arch.h` — from

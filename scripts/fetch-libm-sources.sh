@@ -18,7 +18,7 @@ LIBM_DIR="${REPO_ROOT}/libm"
 WASI_LIBC_REF="${WASI_LIBC_REF:-main}"
 BASE="https://raw.githubusercontent.com/WebAssembly/wasi-libc/${WASI_LIBC_REF}/libc-top-half/musl"
 
-# 42 .c files in src/math/, double-precision plus workhorses
+# 44 .c files in src/math/, double-precision plus workhorses
 MATH_C_FILES=(
     __cos.c __sin.c __tan.c
     __rem_pio2.c __rem_pio2_large.c
@@ -28,7 +28,7 @@ MATH_C_FILES=(
     ceil.c copysign.c cos.c sin.c tan.c
     exp.c exp_data.c
     fabs.c floor.c fma.c
-    fmax.c fmin.c
+    fmax.c fmin.c fmod.c frexp.c
     hypot.c ilogb.c ldexp.c
     log.c log_data.c log10.c
     log2.c log2_data.c

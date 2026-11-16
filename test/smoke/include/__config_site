@@ -32,7 +32,7 @@
 #define _LIBCPP_ABI_FORCE_MICROSOFT 0
 
 #define _LIBCPP_HAS_THREADS 0              // no pthreads on wasm32-unknown-unknown
-#define _LIBCPP_HAS_MONOTONIC_CLOCK 0      // no clock_gettime
+#define _LIBCPP_HAS_MONOTONIC_CLOCK 1      // declares steady_clock; now() is a stub (no clock_gettime)
 #define _LIBCPP_HAS_TERMINAL 0
 #define _LIBCPP_HAS_MUSL_LIBC 1            // wasm-cxx-shim provides musl-style headers
 #define _LIBCPP_HAS_THREAD_API_PTHREAD 0

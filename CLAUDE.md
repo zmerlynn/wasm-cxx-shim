@@ -37,7 +37,7 @@ before making meaningful changes.
 ├── libm/                    math (component 2)
 │   ├── include/             vendored <math.h> chain (musl-derived)
 │   └── src/
-│       ├── musl/            42 .c + 5 .h from musl, via wasi-libc tree
+│       ├── musl/            44 .c + 5 .h from musl, via wasi-libc tree
 │       └── internal/        libm.h + arch headers + endian shim
 ├── libcxx/                  C++ ABI/runtime stubs (component 3)
 │   └── src/                 4 hand-written .cpp files (~150 lines total)
@@ -161,8 +161,8 @@ Rules:
    makes future re-vendoring painful.
 5. **Take wasi-libc's musl tree for libm, not upstream musl directly.**
    wasi-libc's `libc-top-half/musl/src/math/` is
-   musl-with-wasm-tweaks-already-applied. Of our 42 closure files,
-   only `__rem_pio2.c` differs from upstream musl; the other 41 are
+   musl-with-wasm-tweaks-already-applied. Of our 44 closure files,
+   only `__rem_pio2.c` differs from upstream musl; the other 43 are
    byte-identical. Inheriting wasi-libc's tree means we inherit their
    ongoing maintenance.
 6. **For libc public headers** (`stdio.h`, `stdlib.h`, etc.), upstream

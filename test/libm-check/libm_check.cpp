@@ -161,6 +161,22 @@ WCS_TEST(LibM, ldexp_scalbn) {
     WCS_CHECK_NEAR(scalbn(3.0,  4), 48.0, EPS);
 }
 
+WCS_TEST(LibM, fmod) {
+    WCS_CHECK_NEAR(fmod(7.5, 2.0), 1.5, EPS);
+    WCS_CHECK_NEAR(fmod(-7.5, 2.0), -1.5, EPS);
+    WCS_CHECK_NEAR(fmod(1.0, 3.0), 1.0, EPS);
+}
+
+WCS_TEST(LibM, frexp) {
+    int e = 0;
+    WCS_CHECK_NEAR(frexp(1024.0, &e), 0.5, EPS);
+    WCS_CHECK_EQ(e, 11);
+    WCS_CHECK_NEAR(frexp(-3.0, &e), -0.75, EPS);
+    WCS_CHECK_EQ(e, 2);
+    WCS_CHECK_NEAR(frexp(0.0, &e), 0.0, EPS);
+    WCS_CHECK_EQ(e, 0);
+}
+
 WCS_TEST(LibM, ilogb) {
     WCS_CHECK_EQ(ilogb(1.0),     0);
     WCS_CHECK_EQ(ilogb(2.0),     1);
