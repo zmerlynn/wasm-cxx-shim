@@ -10,7 +10,9 @@ out of v0.1.x scope.
 
 - manifold's full C-API library (`manifoldc`) compiled for
   `wasm32-unknown-unknown`.
-- Clipper2 (manifold's 2D Boolean dependency) ditto.
+- On manifold 3.x pins only, Clipper2 (its 2D Boolean dependency then)
+  ditto. The default pin, manifold master, replaced Clipper2 with its
+  own 2D boolean engine.
 - A tiny `probe.c` calling manifold's C API:
   `manifold_cube` → `manifold_translate` → `manifold_boolean(ADD)`
   → `manifold_num_tri`.
@@ -34,8 +36,9 @@ repo would defeat the "minimal shim" framing.
 
 The shim's `wasm_cxx_shim_add_manifold()` helper bundles a known-good
 manifold pin (see `cmake/WasmCxxShimManifold.cmake`'s default
-`MANIFOLD_GIT_TAG`). Clipper2's pin is owned by manifold's own
-`cmake/manifoldDeps.cmake`; the shim no longer pre-declares it.
+`MANIFOLD_GIT_TAG`). On 3.x pins, Clipper2's pin is owned by
+manifold's own `cmake/manifoldDeps.cmake`; the shim does not
+pre-declare it.
 
 Each shim release verifies a specific manifold pin in CI; see
 `CHANGELOG.md`'s "Tested upstream combinations" table for the
@@ -47,8 +50,8 @@ None at v0.4.0+. Manifold's `MANIFOLD_NO_IOSTREAM` build option is
 now upstream
 ([elalish/manifold#1690](https://github.com/elalish/manifold/pull/1690),
 merged 2026-05-04). The helper sets the option ON; manifold owns the
-rest, including the bundled Clipper2 carry-patch that mirrors
-[AngusJohnson/Clipper2#1094](https://github.com/AngusJohnson/Clipper2/pull/1094).
+rest. (On 3.x pins that includes the bundled Clipper2 carry-patch that
+mirrors [AngusJohnson/Clipper2#1094](https://github.com/AngusJohnson/Clipper2/pull/1094).)
 
 Callers can still pass `EXTRA_MANIFOLD_PATCHES` to apply their own
 patches against the pinned manifold checkout if needed.
@@ -105,17 +108,28 @@ What it took to get green:
    stripping stream- and filesystem-using bits from the public API
    + tests.
 4. **Stub `include/mutex`** — no-op `std::mutex`/`recursive_mutex`/
-   `lock_guard`/`scoped_lock`/`unique_lock` because libc++ gates
-   these behind `_LIBCPP_HAS_THREADS`.
+   `scoped_lock`, because libc++ gates these behind
+   `_LIBCPP_HAS_THREADS`. `lock_guard`, `unique_lock` and the lock tags
+   come from libc++'s own `<__mutex/*.h>` headers, which are not gated
+   and which other headers (`<memory_resource>`) include too, so
+   defining them here would collide.
 5. **`libcxx-extras.cpp`** — provides the libc++ source-file symbols
    that the main libcxx component intentionally doesn't ship:
    `std::nothrow`, `std::__1::__shared_count::~__shared_count`,
    `std::__1::__shared_weak_count::~__shared_weak_count` /
    `__release_weak` / `lock` / `__get_deleter`, `bad_weak_ptr` key
-   functions, and `std::align`. Scoped to this test, NOT part of the
+   functions, `std::align`, a fake `std::chrono::steady_clock::now`
+   that advances one nanosecond per call (manifold's Boolean2 timing
+   diagnostics name the clock; they are off by default),
+   `std::__throw_system_error` as a trap (reachable from `unique_lock`
+   misuse), and an adapted port of `std::pmr` (`get_default_resource`
+   and friends, plus an `unsynchronized_pool_resource` that serves every
+   request from its adhoc pool; `synchronized_pool_resource` and
+   `monotonic_buffer_resource` are not provided and fail to link).
+   Scoped to this test, NOT part of the
    main libcxx component (which stays insulated from `<memory>` /
    `<new>` includes for libc++ version-drift safety).
-6. **Clipper2 utilities/tests/examples disabled** via
+6. **Clipper2 utilities/tests/examples disabled** (3.x pins) via
    `CLIPPER2_TESTS=OFF`, `CLIPPER2_UTILS=OFF`, `CLIPPER2_EXAMPLES=OFF`
    — defaults are ON and pull in `<sys/types.h>`, googletest, etc.
    we don't ship.
@@ -138,7 +152,7 @@ cmake --build --preset wasm32 --target manifold-link-probe
 ctest --preset wasm32 -R manifold_link
 ```
 
-Default is `OFF` — the FetchContent clone of manifold + Clipper2 +
+Default is `OFF` — the FetchContent clone of manifold +
 manifold's transitive deps takes minutes and isn't something every
 developer needs on every edit-build loop. CI runs it in its own job.
 

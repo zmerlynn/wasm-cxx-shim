@@ -1,11 +1,11 @@
 # libm — math library subset for wasm32-unknown-unknown.
 #
-# Independently buildable. 42 .c files vendored from musl via wasi-libc,
+# Independently buildable. 44 .c files vendored from musl via wasi-libc,
 # plus internal helper headers and a public <math.h> chain.
 #
 # See README.md for symbol list, source provenance, and swap instructions.
 
-# 42 .c files — the 15 named functions (acos asin atan2 cos sin pow fma
+# 44 .c files — the 15 named functions (acos asin atan2 cos sin pow fma
 # fmax fmin hypot ilogb log10 log2 remquo round) + workhorses + helpers.
 # Glob-free for reproducibility: a stray file in src/musl/ won't silently
 # get pulled in.
@@ -36,6 +36,8 @@ set(WASM_CXX_SHIM_LIBM_SOURCES
     src/musl/fma.c
     src/musl/fmax.c
     src/musl/fmin.c
+    src/musl/fmod.c
+    src/musl/frexp.c
     src/musl/hypot.c
     src/musl/ilogb.c
     src/musl/ldexp.c

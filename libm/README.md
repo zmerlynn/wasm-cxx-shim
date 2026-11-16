@@ -16,7 +16,7 @@ experiment, see [`docs/context.md`](../docs/context.md)):
 - **specialized**: `remquo`, `round`
 
 Plus workhorses needed transitively or commonly:
-- `atan`, `ceil`, `copysign`, `exp`, `fabs`, `floor`, `ldexp`, `log`,
+- `atan`, `ceil`, `copysign`, `exp`, `fabs`, `floor`, `fmod`, `frexp`, `ldexp`, `log`,
   `scalbn`, `sqrt`, `tan`, `trunc`
 
 All double-precision. Single-precision (`*f`) variants are added on
@@ -59,13 +59,16 @@ than the speed difference for your case.
 
 All math sources vendored from
 [WebAssembly/wasi-libc](https://github.com/WebAssembly/wasi-libc), tree
-`libc-top-half/musl/`. wasi-libc's musl tree is musl-with-wasm-tweaks
+`libc-top-half/musl/`, at commit
+[`4ec32c50`](https://github.com/WebAssembly/wasi-libc/tree/4ec32c50873163d0d8f863393bc0a1d3a4475c24/libc-top-half/musl)
+(all 44 `.c` files are byte-identical to it; re-checked 2026-11-16 when
+`fmod.c` and `frexp.c` were added). wasi-libc's musl tree is musl-with-wasm-tweaks
 already applied — most importantly, alternate-rounding paths gated out
-of `__rem_pio2.c`. Of our 42 closure `.c` files, only `__rem_pio2.c`
-diverges from upstream musl; the other 41 are byte-identical.
+of `__rem_pio2.c`. Of our 44 closure `.c` files, only `__rem_pio2.c`
+diverges from upstream musl; the other 43 are byte-identical.
 
 Vendored layout:
-- `src/musl/` — 42 `.c` files + 5 `*_data.h` data tables
+- `src/musl/` — 44 `.c` files + 5 `*_data.h` data tables
 - `src/internal/libm.h`, `src/internal/atomic.h` — from
   `musl/src/internal/`
 - `src/internal/atomic_arch.h`, `src/internal/fp_arch.h` — from
@@ -90,7 +93,9 @@ Licensing: musl ships as MIT under a project-wide LICENSE file
 FreeBSD, Sun Microsystems, or Arm Limited — those headers are
 preserved verbatim within each `.c` file.
 
-To re-vendor against a newer wasi-libc snapshot:
+`scripts/fetch-libm-sources.sh` defaults to that commit. To re-vendor
+against a newer wasi-libc snapshot, update the pin in the script and
+here, then:
 ```sh
 WASI_LIBC_REF=<sha-or-tag> ./scripts/fetch-libm-sources.sh
 ```

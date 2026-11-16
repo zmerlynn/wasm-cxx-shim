@@ -6,7 +6,7 @@
 # would actually pull manifold + the shim into their own builds.
 #
 # Opt-in via -DWASM_CXX_SHIM_BUILD_MANIFOLD_LINK=ON. Default OFF
-# because the FetchContent clone of manifold + Clipper2 + dependencies
+# because the FetchContent clone of manifold + dependencies
 # is multi-MB and minutes to build — not something we want to inflict
 # on every developer's edit-build loop.
 #
@@ -101,14 +101,16 @@ add_custom_command(
         ${_libcxx_extras_obj}
         $<TARGET_FILE:manifoldc>
         $<TARGET_FILE:manifold>
-        $<TARGET_FILE:Clipper2>
+        # Clipper2 only exists for manifold 3.x pins (an older MANIFOLD_GIT_TAG
+        # override). Manifold master replaced it with its own boolean2 engine.
+        $<$<TARGET_EXISTS:Clipper2>:$<TARGET_FILE:Clipper2>>
         $<TARGET_FILE:wasm-cxx-shim-libcxx>
         $<TARGET_FILE:wasm-cxx-shim-libc>
         $<TARGET_FILE:wasm-cxx-shim-libm>
         -o ${_probe_wasm}
     DEPENDS ${_probe_obj}
             ${_libcxx_extras_obj}
-            manifoldc manifold Clipper2
+            manifoldc manifold $<$<TARGET_EXISTS:Clipper2>:Clipper2>
             wasm-cxx-shim-libc wasm-cxx-shim-libm wasm-cxx-shim-libcxx
     COMMENT "manifold-link: linking probe.wasm"
     VERBATIM
@@ -126,7 +128,7 @@ if(WASM_OBJDUMP_EXECUTABLE)
     )
 endif()
 
-# Size budget. Current: ~340 KB; budget 450 KB to absorb minor growth
+# Size budget. Current: ~405 KB at the 46e5d2c9 master pin; budget 450 KB to absorb minor growth
 # (manifold's library code is the dominant contributor; a meaningful
 # library bump may legitimately push past this).
 add_test(NAME manifold_link_size_budget

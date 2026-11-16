@@ -18,7 +18,10 @@ concurrency:
 jobs:
   build:
     name: ${{ matrix.os }} / LLVM ${{ matrix.llvm }}
-    runs-on: ${{ matrix.os }}
+    # ubuntu-latest is Ubuntu 26.04, and apt.llvm.org ships no LLVM 20 for
+    # it (22+ only), so the LLVM 20 Linux cells run on 24.04. The matrix
+    # label stays `ubuntu-latest` because the required check names use it.
+    runs-on: ${{ (matrix.os == 'ubuntu-latest' && matrix.llvm == 20) && 'ubuntu-24.04' || matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -87,7 +90,10 @@ jobs:
   # `build` job stays fast and its status is independent of this one.
   manifold:
     name: manifold / ${{ matrix.os }} / LLVM ${{ matrix.llvm }}
-    runs-on: ${{ matrix.os }}
+    # ubuntu-latest is Ubuntu 26.04, and apt.llvm.org ships no LLVM 20 for
+    # it (22+ only), so the LLVM 20 Linux cells run on 24.04. The matrix
+    # label stays `ubuntu-latest` because the required check names use it.
+    runs-on: ${{ (matrix.os == 'ubuntu-latest' && matrix.llvm == 20) && 'ubuntu-24.04' || matrix.os }}
     strategy:
       fail-fast: false
       matrix:

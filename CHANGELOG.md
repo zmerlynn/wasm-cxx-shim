@@ -15,7 +15,7 @@ combination in CI:
 
 | Shim version          | manifold                                      | Clipper2                                     | Patches shipped       |
 |-----------------------|-----------------------------------------------|----------------------------------------------|-----------------------|
-| unreleased (`main`)   | `v3.5.2`                                      | inherits manifold's pin                      | 0                     |
+| unreleased (`main`)   | `46e5d2c9` (master, pre-4.0; no Clipper2)     | none (manifold master dropped it)            | 0                     |
 | v0.5.0                | `v3.5.0` (also verified against `v3.5.2`)     | inherits manifold's pin                      | 0                     |
 | v0.4.0                | `3ce9622b` (master, includes elalish/manifold#1690) | inherits manifold's pin (manifold owns the FetchContent_Declare) | 0                     |
 | v0.4.0-alpha.1        | `5f95a3ac` (master + vendored elalish/manifold#1690) | inherits manifold's pin (manifold owns the FetchContent_Declare) | 1 (verbatim diff of #1690) |
@@ -36,7 +36,73 @@ version where the macro guard appears natively.
 
 ## Unreleased
 
+Catches up to manifold master at `46e5d2c9` (pre-4.0). Upstream replaced
+Clipper2 with its own 2D boolean engine ("boolean2") and changed its C
+API to return handles instead of taking caller-allocated memory. Two
+libm functions and two libc++ source-file pieces were missing.
+
+### Added
+
+- `libm`: `frexp` (boolean2) and `fmod` (manifold's own tests), vendored
+  from wasi-libc's musl tree like the rest. 44 `.c` files now. Their
+  `libm-check` tests call through volatile function pointers, so clang
+  cannot fold them away, and cover signed zero, subnormals, infinity
+  and NaN.
+- `test/manifold-link/libcxx-extras.cpp`:
+  - a FAKE `steady_clock::now()` that advances one nanosecond per call.
+    boolean2's timing diagnostics name the clock; they are off by
+    default and the readings mean nothing.
+  - `std::__throw_system_error` as a trap. libc++'s `unique_lock`, which
+    the `<mutex>` stub now reuses, calls it on misuse.
+  - an adapted port of libc++'s `src/memory_resource.cpp`: the default
+    resources and an `unsynchronized_pool_resource` with upstream's
+    `pool_options` handling that serves every request from its adhoc
+    pool. Unlike upstream, it traps instead of wrapping on a request
+    too large to round up. `synchronized_pool_resource` and
+    `monotonic_buffer_resource` are not provided and fail to link.
+- `test/manifold-tests/include/`: test-only stand-ins for `<thread>`
+  (runs each function in the constructor; the one upstream concurrency
+  test this enables therefore runs serially and cannot catch a race)
+  and `<iostream>` (discarding `cerr` / `cout` / `clog` / `endl` when
+  libc++'s localization is off).
+- gtest adapter: assertions accept a streamed message
+  (`EXPECT_NEAR(a, b, eps) << "context"`), manipulators included, and
+  evaluate each operand once, as real GoogleTest's do. It includes
+  `<iostream>` as real gtest.h does. `SCOPED_TRACE` is a no-op.
+
 ### Changed
+
+- Default `MANIFOLD_GIT_TAG` moved to manifold master `46e5d2c9`.
+  A 3.x tag still works as an override: the helper keeps its harmless
+  `CLIPPER2_*` options and the test links pick up `Clipper2` only when
+  that target exists. `probe.c` uses the new handle-returning C API,
+  so it would need the 3.x form with a 3.x pin.
+- `libcxx`: aligned `operator new` rounds the size up to a multiple of
+  the alignment before calling `aligned_alloc`, as C11 requires, and
+  traps on overflow. The bundled dlmalloc did not need it; a stricter
+  replacement libc would.
+- gtest adapter: `EXPECT_NEAR` / `ASSERT_NEAR` now pass at exactly
+  `|a - b| == eps`, as GoogleTest's do. The old harness macro was strict.
+- `test/smoke/include/__config_site`: `_LIBCPP_HAS_MONOTONIC_CLOCK` is
+  now 1, which declares `steady_clock` (and `high_resolution_clock`).
+  Nothing reads a real clock and `clock_gettime` stays unimplemented.
+- `test/manifold-link/include/mutex`: takes `lock_guard`,
+  `unique_lock` and the lock tags from libc++'s `<__mutex/*.h>`
+  (present under these names in LLVM 18-21) instead of redefining
+  them. Those headers are not gated on threads, and boolean2 pulls in
+  `<memory_resource>`, which includes them, so the old copies collided.
+- `negative-link`: checks each of the nine out-of-scope functions by
+  name, so implementing one of them (say `clock_gettime`) fails the
+  test even while the others stay undefined.
+- `scripts/fetch-libm-sources.sh` defaults to the wasi-libc commit the
+  tree was vendored from (`4ec32c50`), recorded in `libm/README.md`,
+  instead of `main`.
+- Inner manifold-tests count: 121 to 225, from upstream's new tests in
+  the same six files. Sizes: `manifold-link-probe.wasm` 392 KB to
+  405 KB, `manifold-tests.wasm` 1.16 MB to 1.37 MB, both inside their
+  budgets (the latter with ~7% headroom left).
+
+### Earlier on main (the v3.5.2 pin, never released on its own)
 
 - Default `MANIFOLD_GIT_TAG` bumped from `v3.5.0` to `v3.5.2`. No
   version bump: `libc`, `libm`, and `libcxx` are untouched, so v0.5.0

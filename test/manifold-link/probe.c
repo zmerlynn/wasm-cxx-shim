@@ -6,27 +6,27 @@
  * matters is that compile + link both succeed against our libc/libm/
  * libcxx and the resulting .wasm has zero unexpected imports.
  *
- * API pattern (per manifold v3.4.1's bindings/c/include/manifold/manifoldc.h):
- *   ManifoldManifold *m = manifold_alloc_manifold();   // allocates raw memory
- *   m = manifold_cube(m, 1.0, 1.0, 1.0, 1);            // placement-news into m
- *   ...                                                // use m
- *   manifold_delete_manifold(m);                        // dtor + free
+ * API pattern (manifold master, pre-4.0, after the C API stopped taking
+ * caller-allocated memory):
+ *   ManifoldManifold *m = manifold_cube(1.0, 1.0, 1.0, 1); // returns a new handle
+ *   ...                                                    // use m
+ *   manifold_delete_manifold(m);                            // dtor + free
+ *
+ * manifold 3.x took a `void* mem` first argument from manifold_alloc_*()
+ * instead. Pinning an older MANIFOLD_GIT_TAG needs the older probe.
  */
 
 #include <manifold/manifoldc.h>
 
 extern int probe_run(void) {
     /* Cube → triangle count. Exercises construction + mesh export. */
-    ManifoldManifold *cube_mem = manifold_alloc_manifold();
-    ManifoldManifold *cube = manifold_cube(cube_mem, 1.0, 1.0, 1.0, 1);
+    ManifoldManifold *cube = manifold_cube(1.0, 1.0, 1.0, 1);
 
     /* Boolean union with a translated copy of itself. Exercises the
      * CSG kernel, the BVH, and the symbolic-perturbation paths. */
-    ManifoldManifold *cube2_mem = manifold_alloc_manifold();
-    ManifoldManifold *cube2 = manifold_translate(cube2_mem, cube, 0.5, 0.5, 0.5);
+    ManifoldManifold *cube2 = manifold_translate(cube, 0.5, 0.5, 0.5);
 
-    ManifoldManifold *u_mem = manifold_alloc_manifold();
-    ManifoldManifold *u = manifold_boolean(u_mem, cube, cube2, MANIFOLD_ADD);
+    ManifoldManifold *u = manifold_boolean(cube, cube2, MANIFOLD_ADD);
 
     int n_tris = (int)manifold_num_tri(u);
 

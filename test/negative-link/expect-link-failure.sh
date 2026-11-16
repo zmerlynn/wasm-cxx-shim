@@ -13,17 +13,11 @@
 #   0  link failed with the expected "undefined symbol" pattern
 #   1  link succeeded (regression!) OR link failed with an unexpected error
 #
-# Known limitation — partial regressions:
-#
-# uses_unimplemented.c references 9 out-of-scope functions in one TU.
-# If a future maintainer adds an implementation for ONE of them (say,
-# fopen), the link still fails with 8 undefined symbols, this script
-# still exits 0, and we'd silently lose coverage of fopen. The "all-
-# or-nothing" check catches the most likely regression mode (someone
-# accidentally adding implementations) but not the partial case. A
-# stricter form would compile each function in its own TU + ctest
-# entry; deferred until we have evidence of partial regressions
-# happening in practice.
+# Every function in EXPECTED_UNDEFINED below must appear in the link
+# errors by name. Checking only for "some undefined symbol" would miss a
+# partial regression: someone implementing (say) clock_gettime while
+# the other eight stay undefined. Keep the list in step with
+# uses_unimplemented.c.
 
 set -uo pipefail
 
@@ -80,12 +74,23 @@ if "${WASM_LD}" \
     exit 1
 fi
 
-# Confirm the failure was for the right reason. wasm-ld prints
-# "undefined symbol: <name>" for each unresolved external.
+# Confirm the failure was for the right reason, symbol by symbol.
+# wasm-ld prints "undefined symbol: <name>" for each unresolved external.
+EXPECTED_UNDEFINED=(fopen fclose remove rename system clock_gettime open read close)
+missing=()
+for sym in "${EXPECTED_UNDEFINED[@]}"; do
+    if ! grep -qE "undefined (symbol|function):? ${sym}\b" "${WORK}/link.log"; then
+        missing+=("${sym}")
+    fi
+done
+if [ "${#missing[@]}" -gt 0 ]; then
+    echo "negative-link: FAIL — these are no longer undefined: ${missing[*]}"
+    echo "Someone may have added an implementation for an out-of-scope function."
+    cat "${WORK}/link.log"
+    exit 1
+fi
 if grep -qE 'undefined symbol|undefined function' "${WORK}/link.log"; then
-    echo "negative-link: OK (link failed with undefined-symbol errors as expected)"
-    echo "Sample errors:"
-    grep -E 'undefined symbol|undefined function' "${WORK}/link.log" | head -5 | sed 's/^/  /'
+    echo "negative-link: OK (all ${#EXPECTED_UNDEFINED[@]} out-of-scope functions undefined, as expected)"
     exit 0
 fi
 

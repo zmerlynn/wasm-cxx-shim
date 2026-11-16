@@ -16,10 +16,10 @@ the failure modes the no-imports check doesn't:
 - A function silently disappears from the archive (the test
   wouldn't link, surfacing the loss).
 
-Coverage: 23 tests (one or more per function), exercising the 27
+Coverage: 25 tests (one or more per function), exercising the 29
 public libm symbols — sqrt, fabs, sin, cos, tan, asin, acos, atan,
 atan2, exp, log, log10, log2, pow, hypot, fma, fmax, fmin, ceil,
-floor, trunc, round, copysign, ldexp, scalbn, ilogb, remquo.
+floor, trunc, round, copysign, fmod, frexp, ldexp, scalbn, ilogb, remquo.
 
 ## Tolerances
 

@@ -5,8 +5,8 @@
 # manifold's own test/test_main.cpp (which defines `Options options;`
 # and the helpers like ExpectMeshes /
 # RelatedGL / CheckGL that consumer test files call). Both are
-# compiled against our gtest-shim adapter, linked against manifold +
-# Clipper2 + the shim, and run via Node. ASSERTs and EXPECTs in the
+# compiled against our gtest-shim adapter, linked against manifold
+# (+ Clipper2 on 3.x pins) + the shim, and run via Node. ASSERTs and EXPECTs in the
 # test source produce log lines via the harness's log buffer; the
 # runner reports counts; exit status reflects pass/fail.
 #
@@ -74,7 +74,7 @@ set(_common_compile_flags
     -DMANIFOLD_NO_IOSTREAM=1
     -DMANIFOLD_NO_FILESYSTEM=1       # disables main()+filesystem fixture I/O in test_main.cpp
     -DMANIFOLD_PAR=-1                # serial backend; src/utils.h requires this
-    -DCLIPPER2_MAX_DECIMAL_PRECISION=8  # match manifold's compile flag for clipper2
+    -DCLIPPER2_MAX_DECIMAL_PRECISION=8  # match manifold's compile flag for clipper2 (3.x pins)
     -isystem ${CMAKE_SOURCE_DIR}/test/smoke/include            # __config_site (shared with smoke + manifold-link)
     # Cross-test-dir reuse: pulls the <mutex> stub out of
     # test/manifold-link/include/ rather than duplicating it here. NOT a
@@ -83,6 +83,7 @@ set(_common_compile_flags
     # update this path. Keep these two test dirs together in any
     # restructuring audit.
     -isystem ${CMAKE_SOURCE_DIR}/test/manifold-link/include    # <mutex> stub
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/include               # <thread>, <iostream> stand-ins (tests only)
     -isystem ${CMAKE_SOURCE_DIR}/tools/wasm-test-harness/adapters/gtest  # gtest-shim
     -isystem ${CMAKE_SOURCE_DIR}/tools/wasm-test-harness/include          # <wcs-test.h>
     -isystem ${_libcxx_headers}
@@ -114,7 +115,7 @@ foreach(_src IN LISTS _manifold_test_files)
 endforeach()
 
 # Link the wasm: test objects + harness + libcxx-extras + manifold +
-# Clipper2 + shim libs. Export wcs_run_tests / wcs_log_buffer /
+# shim libs. Export wcs_run_tests / wcs_log_buffer /
 # wcs_log_size for the Node runner.
 set(_tests_wasm "${CMAKE_CURRENT_BINARY_DIR}/manifold-tests.wasm")
 set(_libcxx_extras_obj_for_tests
@@ -133,7 +134,9 @@ add_custom_command(
         $<TARGET_FILE:wasm-cxx-shim-test-harness>
         $<TARGET_FILE:manifoldc>
         $<TARGET_FILE:manifold>
-        $<TARGET_FILE:Clipper2>
+        # Clipper2 only exists for manifold 3.x pins (an older MANIFOLD_GIT_TAG
+        # override). Manifold master replaced it with its own boolean2 engine.
+        $<$<TARGET_EXISTS:Clipper2>:$<TARGET_FILE:Clipper2>>
         $<TARGET_FILE:wasm-cxx-shim-libcxx>
         $<TARGET_FILE:wasm-cxx-shim-libc>
         $<TARGET_FILE:wasm-cxx-shim-libm>
@@ -141,7 +144,7 @@ add_custom_command(
     DEPENDS ${_test_objs}
             ${_libcxx_extras_obj_for_tests}
             wasm-cxx-shim-test-harness
-            manifoldc manifold Clipper2
+            manifoldc manifold $<$<TARGET_EXISTS:Clipper2>:Clipper2>
             wasm-cxx-shim-libc wasm-cxx-shim-libm wasm-cxx-shim-libcxx
     COMMENT "manifold-tests: linking manifold-tests.wasm"
     VERBATIM
@@ -163,10 +166,11 @@ if(WASM_OBJDUMP_EXECUTABLE)
     )
 endif()
 
-# Size budget. Current: ~1.16 MB (boolean + boolean_complex +
-# cross_section + manifoldc + sdf + smooth, at the v3.5.2 pin).
-# Budget 1.4 MB gives ~20% headroom for adding 1-2 more test files
-# of similar shape without immediate breakage. Bigger jumps (e.g.,
+# Size budget. Current: ~1.37 MB (boolean + boolean_complex +
+# cross_section + manifoldc + sdf + smooth, at the 46e5d2c9 master pin;
+# was ~1.16 MB at v3.5.2, the growth is upstream's added tests).
+# Budget 1.4 MB, so only ~7% headroom now: another test file of similar
+# shape will need this raised, with a why-line. Bigger jumps (e.g.,
 # adding manifold_test.cpp once <set>/<thread> deps are sorted)
 # bump this with a why-line.
 add_test(NAME manifold_tests_size_budget

@@ -1,0 +1,49 @@
+// test/manifold-tests/include/iostream — test-only <iostream> shadow.
+//
+// Real gtest.h pulls in <iostream>, so GoogleTest-based sources (manifold's
+// among them) use std::cerr without including it themselves. The shim
+// builds libc++ with _LIBCPP_HAS_LOCALIZATION=0: libc++'s own <iostream>
+// then still declares `extern ostream cerr`, but basic_ostream is never
+// defined, so any `std::cerr << ...` fails to compile, and there is no
+// stream object to link against anyway.
+//
+// With localization on, this forwards to the real header. With it off, it
+// declares discarding stand-ins for cerr / cout / clog and the endl / flush
+// manipulators, in libc++'s own namespace. Anything written to them is
+// dropped. Because this file shadows libc++'s <iostream> by name, a test
+// translation unit never sees both declarations of std::cerr.
+//
+// On the include path for manifold-tests only, BEFORE libc++'s headers.
+#ifndef _WASM_CXX_SHIM_MANIFOLD_TESTS_IOSTREAM
+#define _WASM_CXX_SHIM_MANIFOLD_TESTS_IOSTREAM
+
+#include <__config>
+
+#if _LIBCPP_HAS_LOCALIZATION
+#  include_next <iostream>
+#else
+
+#define _WCS_TEST_IOSTREAM_SHADOW 1
+
+_LIBCPP_BEGIN_NAMESPACE_STD
+
+class __wcs_discard_ostream {
+public:
+    template <class _Tp>
+    __wcs_discard_ostream& operator<<(const _Tp&) { return *this; }
+    __wcs_discard_ostream& operator<<(__wcs_discard_ostream& (*__manip)(__wcs_discard_ostream&)) {
+        return __manip(*this);
+    }
+};
+
+inline __wcs_discard_ostream cerr;
+inline __wcs_discard_ostream cout;
+inline __wcs_discard_ostream clog;
+
+inline __wcs_discard_ostream& endl(__wcs_discard_ostream& __s) { return __s; }
+inline __wcs_discard_ostream& flush(__wcs_discard_ostream& __s) { return __s; }
+
+_LIBCPP_END_NAMESPACE_STD
+
+#endif  // _LIBCPP_HAS_LOCALIZATION
+#endif  // _WASM_CXX_SHIM_MANIFOLD_TESTS_IOSTREAM

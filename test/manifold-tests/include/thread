@@ -1,0 +1,37 @@
+// test/manifold-tests/include/thread — stub <thread> for no-thread builds.
+//
+// Test-only, like the <mutex> stub in test/manifold-link/include/. With
+// _LIBCPP_HAS_THREADS=0, libc++'s <thread> declares no std::thread, but
+// manifold's cross_section_test.cpp starts threads in a test gated only
+// on `#ifndef __EMSCRIPTEN__`. This std::thread runs its function to
+// completion in the constructor, so join() has nothing to wait for. The
+// test still exercises the code; it just cannot race on a single thread.
+//
+// On the include path for manifold-tests only, BEFORE libc++'s headers.
+#ifndef _WASM_CXX_SHIM_MANIFOLD_TESTS_THREAD
+#define _WASM_CXX_SHIM_MANIFOLD_TESTS_THREAD
+
+#include <__config>
+#include <utility>
+
+_LIBCPP_BEGIN_NAMESPACE_STD
+
+class thread {
+public:
+    thread() noexcept = default;
+    template <class _Fp, class... _Args>
+    explicit thread(_Fp&& __f, _Args&&... __args) {
+        std::forward<_Fp>(__f)(std::forward<_Args>(__args)...);
+    }
+    thread(const thread&) = delete;
+    thread& operator=(const thread&) = delete;
+    thread(thread&&) noexcept = default;
+    thread& operator=(thread&&) noexcept = default;
+    bool joinable() const noexcept { return false; }
+    void join() {}
+    void detach() {}
+};
+
+_LIBCPP_END_NAMESPACE_STD
+
+#endif
