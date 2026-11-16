@@ -6,7 +6,7 @@ the shim. Validates end-to-end correctness of the full stack
 real consumer's tests, not just a probe.
 
 Currently runs six test files from upstream manifold at the default pin
-(manifold master `46e5d2c9`) — **225/225 tests pass**. One of them,
+(manifold master `74493803`) — **225/225 tests pass**. One of them,
 `CrossSection.ConcurrentConstAccessorsAreRaceFree`, cannot do what its
 name says here: the `<thread>` stand-in (see below) runs each "thread"
 to completion in turn, so it exercises the code serially and cannot

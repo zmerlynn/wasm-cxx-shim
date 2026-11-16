@@ -128,7 +128,7 @@ if(WASM_OBJDUMP_EXECUTABLE)
     )
 endif()
 
-# Size budget. Current: ~405 KB at the 46e5d2c9 master pin; budget 450 KB to absorb minor growth
+# Size budget. Current: ~405 KB at the 74493803 master pin; budget 450 KB to absorb minor growth
 # (manifold's library code is the dominant contributor; a meaningful
 # library bump may legitimately push past this).
 add_test(NAME manifold_link_size_budget
