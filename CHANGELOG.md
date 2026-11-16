@@ -15,7 +15,7 @@ combination in CI:
 
 | Shim version          | manifold                                      | Clipper2                                     | Patches shipped       |
 |-----------------------|-----------------------------------------------|----------------------------------------------|-----------------------|
-| unreleased (`main`)   | `46e5d2c9` (master, pre-4.0; no Clipper2)     | none (manifold master dropped it)            | 0                     |
+| v0.6.0                | `46e5d2c9` (master, pre-4.0; no Clipper2)     | none (manifold master dropped it)            | 0                     |
 | v0.5.0                | `v3.5.0` (also verified against `v3.5.2`)     | inherits manifold's pin                      | 0                     |
 | v0.4.0                | `3ce9622b` (master, includes elalish/manifold#1690) | inherits manifold's pin (manifold owns the FetchContent_Declare) | 0                     |
 | v0.4.0-alpha.1        | `5f95a3ac` (master + vendored elalish/manifold#1690) | inherits manifold's pin (manifold owns the FetchContent_Declare) | 1 (verbatim diff of #1690) |
@@ -34,7 +34,7 @@ version where the macro guard appears natively.
 
 ---
 
-## Unreleased
+## v0.6.0 - manifold master (46e5d2c9) catch-up (2026-11-16)
 
 Catches up to manifold master at `46e5d2c9` (pre-4.0). Upstream replaced
 Clipper2 with its own 2D boolean engine ("boolean2") and changed its C
