@@ -167,7 +167,7 @@ if(WASM_OBJDUMP_EXECUTABLE)
 endif()
 
 # Size budget. Current: ~1.37 MB (boolean + boolean_complex +
-# cross_section + manifoldc + sdf + smooth, at the 46e5d2c9 master pin;
+# cross_section + manifoldc + sdf + smooth, at the 74493803 master pin;
 # was ~1.16 MB at v3.5.2, the growth is upstream's added tests).
 # Budget 1.4 MB, so only ~7% headroom now: another test file of similar
 # shape will need this raised, with a why-line. Bigger jumps (e.g.,

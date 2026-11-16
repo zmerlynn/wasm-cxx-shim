@@ -34,6 +34,30 @@ version where the macro guard appears natively.
 
 ---
 
+## Unreleased
+
+Moves the tested pin to manifold master `74493803`, which includes
+elalish/manifold#1963: boolean2's phase timing now compiles only under
+`MANIFOLD_DEBUG` / `MANIFOLD_TIMING`, so manifold no longer names
+`steady_clock` in a default build.
+
+### Removed
+
+- `test/manifold-link/libcxx-extras.cpp`: the fake `steady_clock::now()`.
+- `test/smoke/include/__config_site`: `_LIBCPP_HAS_MONOTONIC_CLOCK` is
+  back to 0, as before v0.6.0.
+
+### Changed
+
+- Default `MANIFOLD_GIT_TAG` moved to manifold master `74493803`.
+
+### Upgrading
+
+Consumers who copied `__config_site` or `libcxx-extras.cpp` and still
+build manifold at `46e5d2c9` (or anything before #1963) must keep the
+v0.6.0 copies: those pins name `steady_clock` unconditionally and fail
+to compile with the monotonic clock off.
+
 ## v0.6.0 - manifold master (46e5d2c9) catch-up (2026-11-16)
 
 Catches up to manifold master at `46e5d2c9` (pre-4.0). Upstream replaced

@@ -118,9 +118,7 @@ What it took to get green:
    `std::nothrow`, `std::__1::__shared_count::~__shared_count`,
    `std::__1::__shared_weak_count::~__shared_weak_count` /
    `__release_weak` / `lock` / `__get_deleter`, `bad_weak_ptr` key
-   functions, `std::align`, a fake `std::chrono::steady_clock::now`
-   that advances one nanosecond per call (manifold's Boolean2 timing
-   diagnostics name the clock; they are off by default),
+   functions, `std::align`,
    `std::__throw_system_error` as a trap (reachable from `unique_lock`
    misuse), and an adapted port of `std::pmr` (`get_default_resource`
    and friends, plus an `unsynchronized_pool_resource` that serves every

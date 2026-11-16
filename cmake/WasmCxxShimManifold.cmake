@@ -58,14 +58,14 @@
 
 include_guard(GLOBAL)
 
-# Tested-pin default: manifold master at 46e5d2c9 (pre-4.0; its
+# Tested-pin default: manifold master at 74493803 (pre-4.0; its
 # CMakeLists still reports 3.5.1). Bumped when CI verifies a new manifold
 # combination. Source of truth: this file. Changes here must be paired
 # with a CHANGELOG.md entry. A version bump goes with it only when the
 # shim's own components changed — a pin move that needs no shim-side
 # work rides along in the next release.
 set(_wasm_cxx_shim_manifold_default_manifold_tag
-    "46e5d2c9686836ad938cf1258a52a119d78dfb90"
+    "74493803a4d8469779cdf9d8e3e23a11b349c22f"
     CACHE STRING
     "Default manifold pin used by wasm_cxx_shim_add_manifold()")
 
