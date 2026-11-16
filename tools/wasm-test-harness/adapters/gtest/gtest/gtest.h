@@ -35,6 +35,14 @@
 
 #include <wcs-test.h>
 
+// Real gtest.h pulls in <iostream> (through gtest-port.h), and test sources
+// rely on that for std::cerr / std::endl. Do the same. In a build with
+// libc++'s localization off, those names only work if the include path
+// supplies a stand-in <iostream>, as test/manifold-tests/include/ does.
+#if __has_include(<iostream>)
+#  include <iostream>
+#endif
+
 // ---- TEST(SuiteName, CaseName) ---------------------------------------------
 
 #define TEST(SUITE, NAME) WCS_TEST(SUITE, NAME)
@@ -47,7 +55,8 @@
 // shape as GoogleTest's own: on failure, the message object is built,
 // any `<<` operands bind to it, and assigning it to an AssertHelper
 // records the failure through wcs_record_failure(). The streamed message
-// itself is dropped; the harness only logs the failed expression. ASSERT_*
+// itself is dropped; the harness only logs the failed expression. Operands
+// are evaluated once, as in GoogleTest. ASSERT_*
 // puts `return` in front, which works because test bodies return void.
 // The switch makes the macro safe as the body of an unbraced if/else.
 
@@ -56,7 +65,24 @@ namespace wcs_gtest_detail {
 struct Message {
     template <class T>
     Message& operator<<(const T&) { return *this; }
+    // Manipulators such as std::endl are overload sets, which the template
+    // above cannot deduce from, so take them by their concrete type.
+#if defined(_WCS_TEST_IOSTREAM_SHADOW)
+    Message& operator<<(std::__wcs_discard_ostream& (*)(std::__wcs_discard_ostream&)) { return *this; }
+#elif !defined(_LIBCPP_HAS_LOCALIZATION) || _LIBCPP_HAS_LOCALIZATION
+    Message& operator<<(std::ostream& (*)(std::ostream&)) { return *this; }
+#endif
 };
+
+// EXPECT_NEAR's check, with each operand evaluated once, as GoogleTest
+// does. Inclusive at the tolerance, like GoogleTest's |a - b| <= eps; NaN
+// fails.
+template <class A, class B, class E>
+bool near(const A& a, const B& b, const E& eps) {
+    auto diff = a - b;
+    if (diff < 0) diff = -diff;
+    return diff <= eps;
+}
 
 struct AssertHelper {
     const char* file;
@@ -102,9 +128,9 @@ struct AssertHelper {
 // ---- Floating-point comparisons --------------------------------------------
 
 // EXPECT_FLOAT_EQ / EXPECT_DOUBLE_EQ use 4-ULP comparison (matching
-// real GoogleTest). EXPECT_NEAR is straight `|a-b| < eps`, as in the
-// harness's WCS_CHECK_NEAR.
-#define WCS_GTEST_NEAR_(a, b, eps) (((a) - (b) > -(eps)) && ((a) - (b) < (eps)))
+// real GoogleTest). EXPECT_NEAR is `|a-b| <= eps` with each operand
+// evaluated once, as in real GoogleTest.
+#define WCS_GTEST_NEAR_(a, b, eps) ::wcs_gtest_detail::near((a), (b), (eps))
 
 #define EXPECT_FLOAT_EQ(a, b)   WCS_GTEST_CHECK_(::wcs::test::float_eq_4ulp((a), (b)), #a " ~= " #b)
 #define EXPECT_DOUBLE_EQ(a, b)  WCS_GTEST_CHECK_(::wcs::test::double_eq_4ulp((a), (b)), #a " ~= " #b)
@@ -122,34 +148,6 @@ struct AssertHelper {
 // evaluated.
 
 #define SCOPED_TRACE(message) static_cast<void>(0)
-
-// ---- std::cerr / std::endl ---------------------------------------------------
-//
-// Real gtest.h includes <ostream>, so test sources can use std::cerr
-// without including <iostream> themselves (manifold's do). With libc++'s
-// localization off, as the shim builds it, <iostream> declares neither.
-// Provide a discarding stand-in so such sources compile; anything written
-// to it is dropped. Only defined when libc++ itself has no iostreams, so
-// it cannot collide with the real ones.
-
-#include <__config>
-
-#if defined(_LIBCPP_HAS_LOCALIZATION) && !_LIBCPP_HAS_LOCALIZATION
-namespace wcs_gtest_detail {
-struct DiscardStream {
-    template <class T>
-    DiscardStream& operator<<(const T&) { return *this; }
-    DiscardStream& operator<<(DiscardStream& (*manip)(DiscardStream&)) { return manip(*this); }
-};
-inline DiscardStream discard_stream;
-}  // namespace wcs_gtest_detail
-
-namespace std {
-inline ::wcs_gtest_detail::DiscardStream& cerr = ::wcs_gtest_detail::discard_stream;
-inline ::wcs_gtest_detail::DiscardStream& cout = ::wcs_gtest_detail::discard_stream;
-inline ::wcs_gtest_detail::DiscardStream& endl(::wcs_gtest_detail::DiscardStream& s) { return s; }
-}  // namespace std
-#endif
 
 // ---- Test main shims --------------------------------------------------------
 

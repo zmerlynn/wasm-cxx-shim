@@ -8,14 +8,18 @@
 #
 # Run from anywhere; resolves project root via git-rev-parse.
 #
-# Override the upstream commit by setting WASI_LIBC_REF=<sha-or-tag>
-# in the environment. Defaults to `main`.
+# Defaults to the wasi-libc commit the tree was last vendored from, so a
+# re-run reproduces the same bytes. To move to a newer snapshot on
+# purpose, set WASI_LIBC_REF=<sha-or-tag> and update the pin here and in
+# libm/README.md. Note: six headers under libm/ carry provenance comments
+# added after fetching; this script rewrites them without those comments,
+# so restore them (git checkout) after a re-run.
 
 set -euo pipefail
 
 REPO_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 LIBM_DIR="${REPO_ROOT}/libm"
-WASI_LIBC_REF="${WASI_LIBC_REF:-main}"
+WASI_LIBC_REF="${WASI_LIBC_REF:-4ec32c50873163d0d8f863393bc0a1d3a4475c24}"
 BASE="https://raw.githubusercontent.com/WebAssembly/wasi-libc/${WASI_LIBC_REF}/libc-top-half/musl"
 
 # 44 .c files in src/math/, double-precision plus workhorses

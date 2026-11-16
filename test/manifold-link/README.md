@@ -118,12 +118,15 @@ What it took to get green:
    `std::nothrow`, `std::__1::__shared_count::~__shared_count`,
    `std::__1::__shared_weak_count::~__shared_weak_count` /
    `__release_weak` / `lock` / `__get_deleter`, `bad_weak_ptr` key
-   functions, `std::align`, a `std::chrono::steady_clock::now` stub
-   that returns the epoch (manifold's Boolean2 timing diagnostics name
-   the clock; they are off by default), and a reduced port of
-   `std::pmr` (`get_default_resource` and friends, plus an
-   `unsynchronized_pool_resource` that serves every request from its
-   adhoc pool). Scoped to this test, NOT part of the
+   functions, `std::align`, a fake `std::chrono::steady_clock::now`
+   that advances one nanosecond per call (manifold's Boolean2 timing
+   diagnostics name the clock; they are off by default),
+   `std::__throw_system_error` as a trap (reachable from `unique_lock`
+   misuse), and an adapted port of `std::pmr` (`get_default_resource`
+   and friends, plus an `unsynchronized_pool_resource` that serves every
+   request from its adhoc pool; `synchronized_pool_resource` and
+   `monotonic_buffer_resource` are not provided and fail to link).
+   Scoped to this test, NOT part of the
    main libcxx component (which stays insulated from `<memory>` /
    `<new>` includes for libc++ version-drift safety).
 6. **Clipper2 utilities/tests/examples disabled** (3.x pins) via

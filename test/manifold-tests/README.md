@@ -2,17 +2,21 @@
 
 Phase 7-B2: take a portion of upstream manifold's CI and run it under
 the shim. Validates end-to-end correctness of the full stack
-(libc + libm + libcxx + libcxx-extras + manifold + Clipper2) via a
+(libc + libm + libcxx + libcxx-extras + manifold) via a
 real consumer's tests, not just a probe.
 
-Currently runs six test files from upstream manifold — **121/121
-tests pass**:
+Currently runs six test files from upstream manifold at the default pin
+(manifold master `46e5d2c9`) — **225/225 tests pass**. One of them,
+`CrossSection.ConcurrentConstAccessorsAreRaceFree`, cannot do what its
+name says here: the `<thread>` stand-in (see below) runs each "thread"
+to completion in turn, so it exercises the code serially and cannot
+catch a race.
 
 | File | Surface |
 |---|---|
 | `test/boolean_test.cpp`         | 3D Boolean ops (union, difference, intersect, Minkowski, ...) |
 | `test/boolean_complex_test.cpp` | Complex Boolean fixtures (gear permutations, sphere/cube unions, ...) |
-| `test/cross_section_test.cpp`   | 2D ops via Clipper2 (offset, hull, fill rules, decompose) |
+| `test/cross_section_test.cpp`   | 2D ops via manifold's boolean2 engine (offset, hull, fill rules, decompose) |
 | `test/manifoldc_test.cpp`       | C-ABI bindings (CSG ops, transforms, level set) |
 | `test/sdf_test.cpp`             | Signed distance fields → marching cubes; libm-heavy |
 | `test/smooth_test.cpp`          | Surface smoothing (Csaszar, mirrored, gyroid, ...) |
@@ -94,19 +98,33 @@ Things that may need extending when you do:
   manifold/samples helper library + sample-geometry sources wired in.
   Manifold gates `samples` on `MANIFOLD_TEST=ON` which we have OFF, so
   it's not currently built.
-- **Direct `<set>`/`<thread>` use**: tests like `manifold_test.cpp`
-  reference `std::set` / threading constructs without a direct
-  `#include <set>` / `<thread>`, relying on transitive pulls from
-  headers our libcxx subset doesn't ship. Adding such a test means
-  either patching the test source or extending the libcxx subset.
+- **Direct `<set>` use**: tests like `manifold_test.cpp` reference
+  `std::set` without a direct `#include <set>`, relying on transitive
+  pulls from headers our libcxx subset doesn't ship. Adding such a test
+  means either patching the test source or extending the libcxx subset.
+
+## Test-only stand-in headers
+
+`include/` here is on the include path for these tests only, ahead of
+libc++:
+
+- `thread` — a `std::thread` that runs its function in the constructor.
+  `cross_section_test.cpp` starts threads in a test gated only on
+  `#ifndef __EMSCRIPTEN__`, and with `_LIBCPP_HAS_THREADS=0` libc++
+  declares no `std::thread`.
+- `iostream` — real gtest.h pulls in `<iostream>`, and manifold's tests
+  use `std::cerr` from it. With libc++'s localization off there is no
+  usable stream, so this declares discarding `cerr` / `cout` / `clog` /
+  `endl` / `flush` in libc++'s namespace. With localization on it
+  forwards to the real header.
 
 ## Iostream/filesystem stripping
 
 This directory's tests build with `MANIFOLD_NO_IOSTREAM=ON` (set by
 the helper, native upstream option as of manifold#1690). That
 transitively strips iostream/filesystem-using bits from manifold's
-library code, its `test/test_main.cpp` fixture helpers, and the
-bundled Clipper2 headers. No carry-patches needed at v0.4.0+;
+library code and its `test/test_main.cpp` fixture helpers (and, on
+3.x pins, the bundled Clipper2 headers). No carry-patches needed at v0.4.0+;
 documented further in `test/manifold-link/README.md`.
 
 ## Build & run
@@ -126,7 +144,7 @@ node tools/wasm-test-harness/run.mjs \
     build/wasm32/test/manifold-tests/manifold-tests.wasm
 ```
 
-Expected output ends with: `wasm-test-harness: 121 passed, 0 failed, 121 total`.
+Expected output ends with: `wasm-test-harness: 225 passed, 0 failed, 225 total`.
 
 ## Why this exists
 

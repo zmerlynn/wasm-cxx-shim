@@ -83,7 +83,7 @@ set(_common_compile_flags
     # update this path. Keep these two test dirs together in any
     # restructuring audit.
     -isystem ${CMAKE_SOURCE_DIR}/test/manifold-link/include    # <mutex> stub
-    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/include               # <thread> stub (tests only)
+    -isystem ${CMAKE_CURRENT_SOURCE_DIR}/include               # <thread>, <iostream> stand-ins (tests only)
     -isystem ${CMAKE_SOURCE_DIR}/tools/wasm-test-harness/adapters/gtest  # gtest-shim
     -isystem ${CMAKE_SOURCE_DIR}/tools/wasm-test-harness/include          # <wcs-test.h>
     -isystem ${_libcxx_headers}
@@ -169,8 +169,8 @@ endif()
 # Size budget. Current: ~1.37 MB (boolean + boolean_complex +
 # cross_section + manifoldc + sdf + smooth, at the 46e5d2c9 master pin;
 # was ~1.16 MB at v3.5.2, the growth is upstream's added tests).
-# Budget 1.4 MB gives ~20% headroom for adding 1-2 more test files
-# of similar shape without immediate breakage. Bigger jumps (e.g.,
+# Budget 1.4 MB, so only ~7% headroom now: another test file of similar
+# shape will need this raised, with a why-line. Bigger jumps (e.g.,
 # adding manifold_test.cpp once <set>/<thread> deps are sorted)
 # bump this with a why-line.
 add_test(NAME manifold_tests_size_budget

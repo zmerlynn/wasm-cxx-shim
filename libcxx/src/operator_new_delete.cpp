@@ -54,7 +54,15 @@ void* operator new[](size_t size) {
 }
 
 void* operator new(size_t size, std::align_val_t align) {
-    void* p = aligned_alloc(static_cast<size_t>(align), size);
+    // C11 aligned_alloc requires size to be a multiple of the alignment.
+    // Our libc's dlmalloc-backed version does not care, but a consumer
+    // may swap in a stricter libc, so round up here. Alignment is a power
+    // of two (the standard requires it of align_val_t). Trap on overflow
+    // rather than wrap to a short block.
+    size_t a = static_cast<size_t>(align);
+    if (size > static_cast<size_t>(-1) - (a - 1)) __builtin_trap();
+    size_t rounded = (size + (a - 1)) & ~(a - 1);
+    void* p = aligned_alloc(a, rounded);
     if (!p) __builtin_trap();
     return p;
 }

@@ -43,8 +43,10 @@ This smoke makes the chain work via two mechanisms:
 
 2. **`test/smoke/include/__config_site`** is a libc++ override (loaded
    first via `-isystem`) that disables threads, filesystem, locale,
-   wide-chars, monotonic clock, and the time-zone DB at the libc++
-   level. Without it, libc++ headers drag in symbols our shim
+   wide-chars, and the time-zone DB at the libc++ level. It declares
+   the monotonic clock, because manifold master names `steady_clock`;
+   `now()` is a fake in `test/manifold-link/libcxx-extras.cpp`, so no
+   `clock_gettime` is needed. Without it, libc++ headers drag in symbols our shim
    doesn't and shouldn't ship.
 
    Adapted from [pca006132's manifold-on-wasm

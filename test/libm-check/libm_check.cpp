@@ -161,20 +161,38 @@ WCS_TEST(LibM, ldexp_scalbn) {
     WCS_CHECK_NEAR(scalbn(3.0,  4), 48.0, EPS);
 }
 
+// fmod and frexp go through volatile function pointers: with constant
+// arguments clang otherwise folds the calls away, and the test would pass
+// without ever linking the archive's implementation.
+static double (*volatile fmod_fn)(double, double) = fmod;
+static double (*volatile frexp_fn)(double, int*) = frexp;
+
 WCS_TEST(LibM, fmod) {
-    WCS_CHECK_NEAR(fmod(7.5, 2.0), 1.5, EPS);
-    WCS_CHECK_NEAR(fmod(-7.5, 2.0), -1.5, EPS);
-    WCS_CHECK_NEAR(fmod(1.0, 3.0), 1.0, EPS);
+    WCS_CHECK_NEAR(fmod_fn(7.5, 2.0), 1.5, EPS);
+    WCS_CHECK_NEAR(fmod_fn(-7.5, 2.0), -1.5, EPS);
+    WCS_CHECK_NEAR(fmod_fn(1.0, 3.0), 1.0, EPS);
+    WCS_CHECK_EQ(fmod_fn(5.0, INFINITY), 5.0);
+    double negzero = fmod_fn(-0.0, 1.0);
+    WCS_CHECK(negzero == 0.0 && signbit(negzero));
+    WCS_CHECK(isnan(fmod_fn(1.0, 0.0)));
+    WCS_CHECK(isnan(fmod_fn(INFINITY, 1.0)));
+    WCS_CHECK(isnan(fmod_fn(NAN, 1.0)));
 }
 
 WCS_TEST(LibM, frexp) {
     int e = 0;
-    WCS_CHECK_NEAR(frexp(1024.0, &e), 0.5, EPS);
+    WCS_CHECK_NEAR(frexp_fn(1024.0, &e), 0.5, EPS);
     WCS_CHECK_EQ(e, 11);
-    WCS_CHECK_NEAR(frexp(-3.0, &e), -0.75, EPS);
+    WCS_CHECK_NEAR(frexp_fn(-3.0, &e), -0.75, EPS);
     WCS_CHECK_EQ(e, 2);
-    WCS_CHECK_NEAR(frexp(0.0, &e), 0.0, EPS);
+    double zero = frexp_fn(-0.0, &e);
+    WCS_CHECK(zero == 0.0 && signbit(zero));
     WCS_CHECK_EQ(e, 0);
+    // Smallest subnormal, 2^-1074 = 0.5 * 2^-1073.
+    WCS_CHECK_EQ(frexp_fn(4.9406564584124654e-324, &e), 0.5);
+    WCS_CHECK_EQ(e, -1073);
+    WCS_CHECK(isinf(frexp_fn(INFINITY, &e)));
+    WCS_CHECK(isnan(frexp_fn(NAN, &e)));
 }
 
 WCS_TEST(LibM, ilogb) {
